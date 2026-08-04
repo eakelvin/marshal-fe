@@ -13,56 +13,56 @@ import { cn } from "@/lib/utils";
 
 const questions: (
   | {
-      id: "saveWhere";
-      prompt: string;
-      hint: string;
-      multi: true;
-      options: readonly string[];
-    }
+    id: "saveWhere";
+    prompt: string;
+    hint: string;
+    multi: true;
+    options: readonly string[];
+  }
   | {
-      id: "afterSave" | "revisit" | "frustration" | "wouldPay";
-      prompt: string;
-      hint: string;
-      multi: false;
-      options: readonly string[];
-    }
+    id: "afterSave" | "revisit" | "frustration" | "wouldPay";
+    prompt: string;
+    hint: string;
+    multi: false;
+    options: readonly string[];
+  }
 )[] = [
-  {
-    id: "saveWhere",
-    prompt: "Where do you save useful content?",
-    hint: "Select all that apply",
-    multi: true,
-    options: SURVEY_OPTIONS.saveWhere,
-  },
-  {
-    id: "afterSave",
-    prompt: "What happens after you save it?",
-    hint: "Pick the closest match",
-    multi: false,
-    options: SURVEY_OPTIONS.afterSave,
-  },
-  {
-    id: "revisit",
-    prompt: "How often do you revisit saved content?",
-    hint: "Be honest",
-    multi: false,
-    options: SURVEY_OPTIONS.revisit,
-  },
-  {
-    id: "frustration",
-    prompt: "What frustrates you most?",
-    hint: "Pick one",
-    multi: false,
-    options: SURVEY_OPTIONS.frustration,
-  },
-  {
-    id: "wouldPay",
-    prompt: "Would you pay if your saved knowledge became genuinely useful again?",
-    hint: "No commitment — curiosity only",
-    multi: false,
-    options: SURVEY_OPTIONS.wouldPay,
-  },
-];
+    {
+      id: "saveWhere",
+      prompt: "Where do you save useful content?",
+      hint: "Select all that apply",
+      multi: true,
+      options: SURVEY_OPTIONS.saveWhere,
+    },
+    {
+      id: "afterSave",
+      prompt: "What happens after you save it?",
+      hint: "Pick the closest match",
+      multi: false,
+      options: SURVEY_OPTIONS.afterSave,
+    },
+    {
+      id: "revisit",
+      prompt: "How often do you revisit saved content?",
+      hint: "Be honest",
+      multi: false,
+      options: SURVEY_OPTIONS.revisit,
+    },
+    {
+      id: "frustration",
+      prompt: "What frustrates you most?",
+      hint: "Pick one",
+      multi: false,
+      options: SURVEY_OPTIONS.frustration,
+    },
+    {
+      id: "wouldPay",
+      prompt: "Would you pay if your saved knowledge became genuinely useful again?",
+      hint: "No commitment — curiosity only",
+      multi: false,
+      options: SURVEY_OPTIONS.wouldPay,
+    },
+  ];
 
 type AnswerMap = Partial<{
   saveWhere: string[];
@@ -143,9 +143,12 @@ export default function SurveyPage() {
               <div className="mx-auto mb-6 flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Check className="size-5" aria-hidden />
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight">Thanks</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Thank You</h1>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Your answers help shape Marshal. Takes under a minute — appreciated.
+                Your answers help shape Marshal. We appreciate your time.
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                The homepage is a product demo — explore freely.
               </p>
               <Button className="mt-8 w-full" render={<Link href="/" />}>
                 Back to home
@@ -161,7 +164,7 @@ export default function SurveyPage() {
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">Quick survey</h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Five questions. About 60 seconds. Helps us understand how you save knowledge.
+                Five questions. Helps us understand how you save knowledge/data/information.
               </p>
 
               <div className="mt-8 space-y-8">
