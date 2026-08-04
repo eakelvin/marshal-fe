@@ -48,4 +48,15 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Architecture notes
 
 This is a production-quality UI shell with rich mock data. Auth forms navigate through the intended user journey; AI processing on Save is simulated with optimistic UI and agent status feedback.
-# marshal-fe
+
+## Backend switch
+
+Data access goes through `src/lib/api/*` (not pages → Supabase/Node directly).
+
+| Env | Effect |
+|-----|--------|
+| `NEXT_PUBLIC_API_PROVIDER=mock` | Local mock / no persistence |
+| `NEXT_PUBLIC_API_PROVIDER=supabase` | Next `/api/v1/*` routes → Supabase |
+| `NEXT_PUBLIC_API_PROVIDER=http` | Calls `NEXT_PUBLIC_API_URL` `/v1/*` (Node later) |
+
+Copy `.env.example` → `.env.local`. For the survey table, run `supabase/migrations/001_surveys.sql` in the Supabase SQL Editor.

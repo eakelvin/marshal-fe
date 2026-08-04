@@ -9,21 +9,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
-import {
-  collections,
-  currentUser,
-  insights,
-  knowledgeItems,
-  weeklyProgress,
-} from "@/lib/data/mock";
 import { WeeklyChart } from "@/components/dashboard/weekly-chart";
+import { getDashboardData } from "@/lib/api/dashboard";
 
 export const metadata = { title: "Dashboard" };
 
-export default function DashboardPage() {
-  const recent = knowledgeItems.slice(0, 4);
-  const today = knowledgeItems.filter((k) => k.processed).slice(0, 3);
-  const recommended = [knowledgeItems[2], knowledgeItems[4], knowledgeItems[6]];
+export default async function DashboardPage() {
+  const {
+    user,
+    recent,
+    today,
+    recommended,
+    collections,
+    collectionCount,
+    insights,
+    weeklyProgress,
+  } = await getDashboardData();
 
   return (
     <div className="space-y-8">
@@ -32,10 +33,10 @@ export default function DashboardPage() {
         <div>
           <p className="text-sm text-muted-foreground">Good afternoon</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Welcome back, {currentUser.name.split(" ")[0]}
+            Welcome back, {user.name.split(" ")[0]}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Your second brain has {currentUser.itemsSaved} items ready. Keep the streak alive.
+            Your second brain has {user.itemsSaved} items ready. Keep the streak alive.
           </p>
         </div>
         <Button className="gap-1.5 shrink-0" render={<Link href="/save" />}>
@@ -49,7 +50,7 @@ export default function DashboardPage() {
         {[
           {
             label: "Learning streak",
-            value: `${currentUser.streak} days`,
+            value: `${user.streak} days`,
             icon: Flame,
             hint: "Personal best",
           },
@@ -61,13 +62,13 @@ export default function DashboardPage() {
           },
           {
             label: "Reviews done",
-            value: String(currentUser.reviewsCompleted),
+            value: String(user.reviewsCompleted),
             icon: Sparkles,
             hint: "12 due today",
           },
           {
             label: "Collections",
-            value: String(collections.length),
+            value: String(collectionCount),
             icon: Sparkles,
             hint: "2 AI-curated",
           },
@@ -167,7 +168,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {collections.slice(0, 4).map((c) => (
+            {collections.map((c) => (
               <Link
                 key={c.id}
                 href={`/collections/${c.id}`}

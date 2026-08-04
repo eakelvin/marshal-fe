@@ -6,95 +6,126 @@ import { Check, ClipboardList } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { ApiError, submitSurvey } from "@/lib/api";
+import { SURVEY_OPTIONS, type SurveyAnswers } from "@/lib/api/survey-schema";
 import { cn } from "@/lib/utils";
 
-const questions = [
+const questions: (
+  | {
+      id: "saveWhere";
+      prompt: string;
+      hint: string;
+      multi: true;
+      options: readonly string[];
+    }
+  | {
+      id: "afterSave" | "revisit" | "frustration" | "wouldPay";
+      prompt: string;
+      hint: string;
+      multi: false;
+      options: readonly string[];
+    }
+)[] = [
   {
     id: "saveWhere",
     prompt: "Where do you save useful content?",
     hint: "Select all that apply",
     multi: true,
-    options: [
-      "Browser bookmarks",
-      "Read-later apps",
-      "Notion / docs",
-      "Notes or screenshots",
-      "Nowhere systematically",
-      "Other",
-    ],
+    options: SURVEY_OPTIONS.saveWhere,
   },
   {
     id: "afterSave",
     prompt: "What happens after you save it?",
     hint: "Pick the closest match",
     multi: false,
-    options: [
-      "I revisit and learn from it",
-      "I organize it later — sometimes",
-      "It sits unused",
-      "I forget it exists",
-      "I share it, then move on",
-    ],
+    options: SURVEY_OPTIONS.afterSave,
   },
   {
     id: "revisit",
     prompt: "How often do you revisit saved content?",
     hint: "Be honest",
     multi: false,
-    options: ["Daily", "Weekly", "Monthly", "Rarely", "Almost never"],
+    options: SURVEY_OPTIONS.revisit,
   },
   {
     id: "frustration",
     prompt: "What frustrates you most?",
     hint: "Pick one",
     multi: false,
-    options: [
-      "I can't find things later",
-      "No time to go back",
-      "Everything gets messy",
-      "I don't know what's worth revisiting",
-      "Tools don't help me actually learn",
-    ],
+    options: SURVEY_OPTIONS.frustration,
   },
   {
     id: "wouldPay",
     prompt: "Would you pay if your saved knowledge became genuinely useful again?",
     hint: "No commitment — curiosity only",
     multi: false,
-    options: ["Yes", "Maybe — depends on price", "Not sure", "No"],
+    options: SURVEY_OPTIONS.wouldPay,
   },
-] as const;
+];
 
-type AnswerMap = Record<string, string | string[]>;
+type AnswerMap = Partial<{
+  saveWhere: string[];
+  afterSave: string;
+  revisit: string;
+  frustration: string;
+  wouldPay: string;
+}>;
 
 export default function SurveyPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleMulti = (id: string, option: string) => {
-    const current = (answers[id] as string[] | undefined) ?? [];
+  const toggleMulti = (option: string) => {
+    const current = answers.saveWhere ?? [];
     const next = current.includes(option)
       ? current.filter((o) => o !== option)
       : [...current, option];
-    setAnswers((prev) => ({ ...prev, [id]: next }));
+    setAnswers((prev) => ({ ...prev, saveWhere: next }));
   };
 
-  const setSingle = (id: string, option: string) => {
+  const setSingle = (
+    id: "afterSave" | "revisit" | "frustration" | "wouldPay",
+    option: string
+  ) => {
     setAnswers((prev) => ({ ...prev, [id]: option }));
   };
 
-  const complete = questions.every((q) => {
-    const value = answers[q.id];
-    if (q.multi) return Array.isArray(value) && value.length > 0;
-    return typeof value === "string" && value.length > 0;
-  });
+  const complete =
+    (answers.saveWhere?.length ?? 0) > 0 &&
+    !!answers.afterSave &&
+    !!answers.revisit &&
+    !!answers.frustration &&
+    !!answers.wouldPay;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!complete) return;
-    // UI-only for now — wire to an API when ready
-    console.info("survey responses", answers);
-    setSubmitted(true);
+    if (!complete || submitting) return;
+
+    const payload: SurveyAnswers = {
+      saveWhere: answers.saveWhere!,
+      afterSave: answers.afterSave!,
+      revisit: answers.revisit!,
+      frustration: answers.frustration!,
+      wouldPay: answers.wouldPay!,
+    };
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitSurvey(payload);
+      setSubmitted(true);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -152,11 +183,10 @@ export default function SurveyPage() {
                             <button
                               key={option}
                               type="button"
-                              onClick={() =>
-                                q.multi
-                                  ? toggleMulti(q.id, option)
-                                  : setSingle(q.id, option)
-                              }
+                              onClick={() => {
+                                if (q.multi) toggleMulti(option);
+                                else setSingle(q.id, option);
+                              }}
                               className={cn(
                                 "rounded-full border px-3 py-1.5 text-left text-sm transition-colors focus-ring",
                                 isSelected
@@ -177,8 +207,25 @@ export default function SurveyPage() {
                 })}
               </div>
 
-              <Button type="submit" className="mt-8 w-full" disabled={!complete}>
-                Submit answers
+              {error && (
+                <p className="mt-4 text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="mt-8 w-full gap-2"
+                disabled={!complete || submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Spinner className="size-4" />
+                    Saving
+                  </>
+                ) : (
+                  "Submit answers"
+                )}
               </Button>
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 Anonymous for now. No account required.
