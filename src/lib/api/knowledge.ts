@@ -1,12 +1,12 @@
 import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
-import { env } from "@/lib/config/env";
+import { useMockData } from "@/lib/config/env";
 import { knowledgeItems } from "@/lib/data/mock";
 import type { KnowledgeItem } from "@/types";
 
 /** List knowledge items (library). */
 export async function listKnowledgeItems(): Promise<KnowledgeItem[]> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return knowledgeItems;
   }
   const data = await api<{ items: KnowledgeItem[] }>("/v1/items");
@@ -15,7 +15,7 @@ export async function listKnowledgeItems(): Promise<KnowledgeItem[]> {
 
 /** Get a single item by id. */
 export async function getKnowledgeItem(id: string): Promise<KnowledgeItem | null> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return knowledgeItems.find((item) => item.id === id) ?? null;
   }
   try {
@@ -32,7 +32,7 @@ export async function createKnowledgeItem(input: {
   url: string;
   collectionIds?: string[];
 }): Promise<KnowledgeItem> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     const item: KnowledgeItem = {
       id: `k-mock-${Date.now()}`,
       title: input.url,

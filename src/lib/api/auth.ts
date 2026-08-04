@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import { env } from "@/lib/config/env";
+import { env, useMockData } from "@/lib/config/env";
 import { setAccessToken } from "@/lib/api/session";
 import type { UserProfile } from "@/types";
 
@@ -10,14 +10,14 @@ type AuthResult = {
 
 /**
  * Email/password sign-in.
- * Mock: accepts any credentials and stores a fake token.
- * HTTP: POST /v1/auth/login on Supabase Functions or Node.
+ * Mock/supabase: accepts any credentials and stores a fake token.
+ * HTTP: POST /v1/auth/login on Node.
  */
 export async function login(input: {
   email: string;
   password: string;
 }): Promise<AuthResult> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     const result: AuthResult = {
       token: "mock-token",
       user: {
@@ -51,7 +51,7 @@ export async function register(input: {
   email: string;
   password: string;
 }): Promise<AuthResult> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return login({ email: input.email, password: input.password });
   }
 
@@ -65,7 +65,7 @@ export async function register(input: {
 }
 
 export async function requestMagicLink(email: string): Promise<void> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return;
   }
   await api<{ ok: true }>("/v1/auth/magic-link", {

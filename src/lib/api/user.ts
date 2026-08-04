@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import { env } from "@/lib/config/env";
+import { useMockData } from "@/lib/config/env";
 import { currentUser, insights, weeklyProgress } from "@/lib/data/mock";
 import type { UserProfile } from "@/types";
 
@@ -7,7 +7,7 @@ export type Insight = { id: string; title: string; body: string };
 export type WeeklyProgressPoint = { day: string; items: number; reviews: number };
 
 export async function getCurrentUser(): Promise<UserProfile> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return currentUser;
   }
   const data = await api<{ user: UserProfile }>("/v1/me");
@@ -15,7 +15,7 @@ export async function getCurrentUser(): Promise<UserProfile> {
 }
 
 export async function getInsights(): Promise<Insight[]> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return insights;
   }
   const data = await api<{ insights: Insight[] }>("/v1/me/insights");
@@ -23,7 +23,7 @@ export async function getInsights(): Promise<Insight[]> {
 }
 
 export async function getWeeklyProgress(): Promise<WeeklyProgressPoint[]> {
-  if (env.apiProvider === "mock") {
+  if (useMockData()) {
     return weeklyProgress;
   }
   const data = await api<{ progress: WeeklyProgressPoint[] }>("/v1/me/weekly-progress");

@@ -51,3 +51,13 @@ export function assertSupabaseConfig() {
     );
   }
 }
+
+/**
+ * Domain modules without a real backend yet (dashboard, library, …)
+ * keep serving mock data under mock + supabase.
+ * Only PROVIDER=http hits NEXT_PUBLIC_API_URL.
+ * Survey is the exception — it has its own /api/v1/survey route.
+ */
+export function useMockData() {
+  return env.apiProvider !== "http";
+}
