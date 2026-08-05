@@ -10,6 +10,8 @@ import type {
 
 export const currentUser: UserProfile = {
   name: "Alex Chen",
+  firstName: "Alex",
+  lastName: "Chen",
   email: "alex@marshal.ai",
   occupation: "Product Designer",
   streak: 12,

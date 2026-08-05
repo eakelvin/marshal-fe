@@ -1,8 +1,5 @@
-import {
-  getCurrentUser,
-  getInsights,
-  getWeeklyProgress,
-} from "@/lib/api/user";
+import { getInsights, getWeeklyProgress } from "@/lib/api/user";
+import { getCurrentUser } from "@/lib/api/user-server";
 import { listCollections } from "@/lib/api/collections";
 import { listKnowledgeItems } from "@/lib/api/knowledge";
 

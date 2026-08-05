@@ -1,23 +1,21 @@
 import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
-import { useMockData } from "@/lib/config/env";
+import { env, useProductFixtures } from "@/lib/config/env";
 import { knowledgeItems } from "@/lib/data/mock";
 import type { KnowledgeItem } from "@/types";
 
-/** List knowledge items (library). */
 export async function listKnowledgeItems(): Promise<KnowledgeItem[]> {
-  if (useMockData()) {
-    return knowledgeItems;
-  }
+  if (useProductFixtures()) return knowledgeItems;
+  if (env.apiProvider === "supabase") return [];
   const data = await api<{ items: KnowledgeItem[] }>("/v1/items");
   return data.items;
 }
 
-/** Get a single item by id. */
 export async function getKnowledgeItem(id: string): Promise<KnowledgeItem | null> {
-  if (useMockData()) {
+  if (useProductFixtures()) {
     return knowledgeItems.find((item) => item.id === id) ?? null;
   }
+  if (env.apiProvider === "supabase") return null;
   try {
     const data = await api<{ item: KnowledgeItem }>(`/v1/items/${id}`);
     return data.item;
@@ -27,13 +25,12 @@ export async function getKnowledgeItem(id: string): Promise<KnowledgeItem | null
   }
 }
 
-/** Quick-save a URL — agents process async on the backend. */
 export async function createKnowledgeItem(input: {
   url: string;
   collectionIds?: string[];
 }): Promise<KnowledgeItem> {
-  if (useMockData()) {
-    const item: KnowledgeItem = {
+  if (useProductFixtures()) {
+    return {
       id: `k-mock-${Date.now()}`,
       title: input.url,
       url: input.url,
@@ -52,7 +49,9 @@ export async function createKnowledgeItem(input: {
       processed: false,
       collectionIds: input.collectionIds ?? [],
     };
-    return item;
+  }
+  if (env.apiProvider === "supabase") {
+    throw new ApiError("Saving knowledge is not wired yet", 501);
   }
   const data = await api<{ item: KnowledgeItem }>("/v1/items", {
     method: "POST",

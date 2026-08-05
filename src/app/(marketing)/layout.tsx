@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { UserAccountMenu } from "@/components/shared/user-account-menu";
 import { Button } from "@/components/ui/button";
+import { getSessionUser } from "@/lib/api/user-server";
 
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getSessionUser();
+
   return (
     <div className="relative min-h-dvh flex flex-col">
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-xl">
@@ -32,12 +36,23 @@ export default function MarketingLayout({
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" render={<Link href="/login" />}>
-              Sign in
-            </Button>
-            <Button size="sm" render={<Link href="/register" />}>
-              Get started
-            </Button>
+            {user ? (
+              <UserAccountMenu user={user} />
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  render={<Link href="/login" />}
+                >
+                  Sign in
+                </Button>
+                <Button size="sm" render={<Link href="/register" />}>
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

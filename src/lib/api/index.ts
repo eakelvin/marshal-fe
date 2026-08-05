@@ -19,11 +19,10 @@ export {
 } from "@/lib/api/knowledge";
 export { listCollections, getCollection } from "@/lib/api/collections";
 export {
-  getCurrentUser,
   getInsights,
   getWeeklyProgress,
+  getFirstName,
 } from "@/lib/api/user";
-export { getDashboardData } from "@/lib/api/dashboard";
 export { submitSurvey } from "@/lib/api/survey";
 export type { SurveyAnswers, SurveyRecord } from "@/lib/api/survey-schema";
 export { SURVEY_OPTIONS } from "@/lib/api/survey-schema";

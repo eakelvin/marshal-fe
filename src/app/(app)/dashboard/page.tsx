@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
 import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { getDashboardData } from "@/lib/api/dashboard";
+import { getFirstName } from "@/lib/api/user-mapper";
 
 export const metadata = { title: "Dashboard" };
 
@@ -26,6 +27,8 @@ export default async function DashboardPage() {
     weeklyProgress,
   } = await getDashboardData();
 
+  const firstName = getFirstName(user);
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -33,7 +36,7 @@ export default async function DashboardPage() {
         <div>
           <p className="text-sm text-muted-foreground">Good afternoon</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Welcome back, {user.name.split(" ")[0]}
+            Welcome back, {firstName}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             Your second brain has {user.itemsSaved} items ready. Keep the streak alive.

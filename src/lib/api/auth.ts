@@ -1,73 +1,36 @@
 import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import { setAccessToken } from "@/lib/api/session";
+import { mapSupabaseUser } from "@/lib/api/user-mapper";
 import { env } from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile } from "@/types";
-import type { User } from "@supabase/supabase-js";
 
 export type AuthResult = {
   token: string;
   user: UserProfile;
-  /** True when email confirmation is required before a session exists */
   needsEmailConfirmation?: boolean;
 };
-
-function mapUser(user: User, emailFallback?: string): UserProfile {
-  const meta = user.user_metadata ?? {};
-  const first = meta.first_name as string | undefined;
-  const last = meta.last_name as string | undefined;
-  const full =
-    (meta.full_name as string | undefined) ||
-    (meta.name as string | undefined) ||
-    [first, last].filter(Boolean).join(" ") ||
-    user.email?.split("@")[0] ||
-    "User";
-
-  return {
-    name: full,
-    email: user.email ?? emailFallback ?? "",
-    occupation: (meta.occupation as string | undefined) ?? "",
-    streak: 0,
-    itemsSaved: 0,
-    reviewsCompleted: 0,
-    followers: 0,
-    following: 0,
-    achievements: [],
-  };
-}
 
 function siteOrigin() {
   if (typeof window !== "undefined") return window.location.origin;
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
-function mockResult(email: string): AuthResult {
-  return {
-    token: "mock-token",
-    user: {
-      name: "Alex Chen",
-      email,
-      occupation: "Product Designer",
-      streak: 12,
-      itemsSaved: 247,
-      reviewsCompleted: 89,
-      followers: 1284,
-      following: 312,
-      achievements: [],
-    },
-  };
+function requireLiveAuth() {
+  if (env.apiProvider === "mock") {
+    throw new ApiError(
+      "Auth requires NEXT_PUBLIC_API_PROVIDER=supabase",
+      503
+    );
+  }
 }
 
 export async function login(input: {
   email: string;
   password: string;
 }): Promise<AuthResult> {
-  if (env.apiProvider === "mock") {
-    const result = mockResult(input.email);
-    setAccessToken(result.token);
-    return result;
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -82,7 +45,7 @@ export async function login(input: {
     setAccessToken(data.session.access_token);
     return {
       token: data.session.access_token,
-      user: mapUser(data.user, input.email),
+      user: mapSupabaseUser(data.user, input.email),
     };
   }
 
@@ -101,9 +64,7 @@ export async function register(input: {
   email: string;
   password: string;
 }): Promise<AuthResult> {
-  if (env.apiProvider === "mock") {
-    return login({ email: input.email, password: input.password });
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -127,6 +88,8 @@ export async function register(input: {
         token: "",
         user: {
           name: fullName || input.email.split("@")[0],
+          firstName: input.firstName,
+          lastName: input.lastName,
           email: input.email,
           occupation: "",
           streak: 0,
@@ -143,7 +106,7 @@ export async function register(input: {
     setAccessToken(data.session.access_token);
     return {
       token: data.session.access_token,
-      user: mapUser(data.user!, input.email),
+      user: mapSupabaseUser(data.user!, input.email),
     };
   }
 
@@ -157,10 +120,7 @@ export async function register(input: {
 }
 
 export async function signInWithGoogle(next = "/dashboard"): Promise<void> {
-  if (env.apiProvider === "mock") {
-    window.location.href = next;
-    return;
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -182,9 +142,7 @@ export async function signInWithGoogle(next = "/dashboard"): Promise<void> {
 }
 
 export async function requestMagicLink(email: string): Promise<void> {
-  if (env.apiProvider === "mock") {
-    return;
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -206,9 +164,7 @@ export async function requestMagicLink(email: string): Promise<void> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  if (env.apiProvider === "mock") {
-    return;
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -227,9 +183,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function updatePassword(password: string): Promise<void> {
-  if (env.apiProvider === "mock") {
-    return;
-  }
+  requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
@@ -248,12 +202,11 @@ export async function logout(): Promise<void> {
   setAccessToken(null);
 
   if (env.apiProvider === "supabase") {
-    // Clear browser client session, then hit the server route so SSR cookies die too.
     try {
       const supabase = createClient();
       await supabase.auth.signOut({ scope: "global" });
     } catch {
-      // continue — server route is the source of truth for cookies
+      // server route clears cookies
     }
     await fetch("/auth/signout", { method: "POST", credentials: "include" });
     return;
@@ -263,27 +216,27 @@ export async function logout(): Promise<void> {
     try {
       await api("/v1/auth/logout", { method: "POST" });
     } catch {
-      // token already cleared locally
+      // ignore
     }
   }
 }
 
 export async function getAuthUser(): Promise<UserProfile | null> {
-  if (env.apiProvider === "mock") {
-    return mockResult("alex@marshal.ai").user;
-  }
-
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
-    return mapUser(data.user);
+    return mapSupabaseUser(data.user);
   }
 
-  try {
-    const data = await api<{ user: UserProfile }>("/v1/me");
-    return data.user;
-  } catch {
-    return null;
+  if (env.apiProvider === "http") {
+    try {
+      const data = await api<{ user: UserProfile }>("/v1/me");
+      return data.user;
+    } catch {
+      return null;
+    }
   }
+
+  return null;
 }

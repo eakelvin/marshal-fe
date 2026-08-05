@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { GoogleIcon } from "@/components/shared/google-icon";
+import { PasswordInput } from "@/components/auth/password-input";
 import { ApiError, register, signInWithGoogle } from "@/lib/api";
 
 export function RegisterForm() {
@@ -102,10 +103,9 @@ export function RegisterForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             autoComplete="new-password"
             minLength={8}

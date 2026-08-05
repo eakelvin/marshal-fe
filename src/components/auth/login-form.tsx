@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { GoogleIcon } from "@/components/shared/google-icon";
+import { PasswordInput } from "@/components/auth/password-input";
 import { ApiError, login, signInWithGoogle } from "@/lib/api";
 
 export function LoginForm() {
@@ -81,10 +82,9 @@ export function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             autoComplete="current-password"
             value={password}

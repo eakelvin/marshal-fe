@@ -36,7 +36,7 @@ export function AppSidebar() {
   return (
     <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center px-4">
-        <Logo href="/dashboard" />
+        <Logo href="/" />
       </div>
       <ScrollArea className="flex-1 px-3 py-2">
         <nav aria-label="Main" className="space-y-0.5">
@@ -95,7 +95,7 @@ export function AppSidebar() {
           className={cn(
             "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground transition-colors focus-ring",
             pathname.startsWith("/settings") &&
-              "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
           )}
         >
           <Settings className="size-4" aria-hidden />

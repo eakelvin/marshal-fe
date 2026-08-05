@@ -1,21 +1,21 @@
 import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
-import { useMockData } from "@/lib/config/env";
+import { env, useProductFixtures } from "@/lib/config/env";
 import { collections } from "@/lib/data/mock";
 import type { Collection } from "@/types";
 
 export async function listCollections(): Promise<Collection[]> {
-  if (useMockData()) {
-    return collections;
-  }
+  if (useProductFixtures()) return collections;
+  if (env.apiProvider === "supabase") return [];
   const data = await api<{ collections: Collection[] }>("/v1/collections");
   return data.collections;
 }
 
 export async function getCollection(id: string): Promise<Collection | null> {
-  if (useMockData()) {
+  if (useProductFixtures()) {
     return collections.find((c) => c.id === id) ?? null;
   }
+  if (env.apiProvider === "supabase") return null;
   try {
     const data = await api<{ collection: Collection }>(`/v1/collections/${id}`);
     return data.collection;

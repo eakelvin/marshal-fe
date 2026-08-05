@@ -86,6 +86,8 @@ export interface Notification {
 
 export interface UserProfile {
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   occupation: string;
   avatar?: string;

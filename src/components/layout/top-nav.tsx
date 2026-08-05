@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Bell,
   Menu,
@@ -12,16 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -34,12 +23,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { notifications, currentUser as mockUser } from "@/lib/data/mock";
-import { getAuthUser, logout } from "@/lib/api";
+import { notifications } from "@/lib/data/mock";
+import { getAuthUser } from "@/lib/api";
 import type { UserProfile } from "@/types";
 import { cn } from "@/lib/utils";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Logo } from "@/components/shared/logo";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserAccountMenu } from "@/components/shared/user-account-menu";
 
 export function TopNav({
   onToggleAi,
@@ -48,32 +39,23 @@ export function TopNav({
   onToggleAi?: () => void;
   aiOpen?: boolean;
 }) {
-  const router = useRouter();
-  const [user, setUser] = useState<UserProfile>(mockUser);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     let cancelled = false;
-    getAuthUser().then((authUser) => {
-      if (!cancelled && authUser) setUser(authUser);
-    });
+    getAuthUser()
+      .then((authUser) => {
+        if (!cancelled) setUser(authUser);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
   }, []);
-
-  const handleSignOut = async () => {
-    await logout();
-    router.replace("/login");
-    router.refresh();
-  };
-
-  const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border/80 bg-background/80 px-4 backdrop-blur-xl lg:px-6">
@@ -191,47 +173,11 @@ export function TopNav({
 
         <ThemeToggle />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-full"
-                aria-label="Account menu"
-              />
-            }
-          >
-            <Avatar className="size-7">
-              <AvatarFallback className="bg-primary/15 text-primary text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/profile" />}>
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem render={<Link href="/settings" />}>
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                void handleSignOut();
-              }}
-            >
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!loaded ? (
+          <Skeleton className="size-7 rounded-full" />
+        ) : user ? (
+          <UserAccountMenu user={user} />
+        ) : null}
       </div>
     </header>
   );
