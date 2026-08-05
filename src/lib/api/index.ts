@@ -5,8 +5,13 @@ export {
   login,
   register,
   requestMagicLink,
+  requestPasswordReset,
+  updatePassword,
+  signInWithGoogle,
   logout,
+  getAuthUser,
 } from "@/lib/api/auth";
+export type { AuthResult } from "@/lib/api/auth";
 export {
   listKnowledgeItems,
   getKnowledgeItem,

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Menu,
@@ -32,7 +34,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { notifications, currentUser } from "@/lib/data/mock";
+import { notifications, currentUser as mockUser } from "@/lib/data/mock";
+import { getAuthUser, logout } from "@/lib/api";
+import type { UserProfile } from "@/types";
 import { cn } from "@/lib/utils";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Logo } from "@/components/shared/logo";
@@ -44,7 +48,32 @@ export function TopNav({
   onToggleAi?: () => void;
   aiOpen?: boolean;
 }) {
+  const router = useRouter();
+  const [user, setUser] = useState<UserProfile>(mockUser);
   const unread = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    let cancelled = false;
+    getAuthUser().then((authUser) => {
+      if (!cancelled && authUser) setUser(authUser);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await logout();
+    router.replace("/login");
+    router.refresh();
+  };
+
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border/80 bg-background/80 px-4 backdrop-blur-xl lg:px-6">
@@ -175,18 +204,15 @@ export function TopNav({
           >
             <Avatar className="size-7">
               <AvatarFallback className="bg-primary/15 text-primary text-xs">
-                {currentUser.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+                {initials}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -197,7 +223,11 @@ export function TopNav({
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/login" />}>
+            <DropdownMenuItem
+              onClick={() => {
+                void handleSignOut();
+              }}
+            >
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

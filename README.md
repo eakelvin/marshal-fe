@@ -56,7 +56,16 @@ Data access goes through `src/lib/api/*` (not pages → Supabase/Node directly).
 | Env | Effect |
 |-----|--------|
 | `NEXT_PUBLIC_API_PROVIDER=mock` | Local mock / no persistence |
-| `NEXT_PUBLIC_API_PROVIDER=supabase` | Next `/api/v1/*` routes → Supabase |
+| `NEXT_PUBLIC_API_PROVIDER=supabase` | Supabase Auth + Next `/api/v1/*` |
 | `NEXT_PUBLIC_API_PROVIDER=http` | Calls `NEXT_PUBLIC_API_URL` `/v1/*` (Node later) |
 
-Copy `.env.example` → `.env.local`. For the survey table, run `supabase/migrations/001_surveys.sql` in the Supabase SQL Editor.
+### Supabase Auth setup
+
+1. Enable **Email** and **Google** under Authentication → Providers.
+2. Google: add Client ID/Secret from Google Cloud Console.
+3. Auth → URL configuration:
+   - Site URL: your app origin (e.g. `http://localhost:3000`)
+   - Redirect URLs: `http://localhost:3000/auth/callback` (+ production URL)
+4. Run `supabase/migrations/001_surveys.sql` for the survey table.
+
+Copy `.env.example` → `.env.local`.
