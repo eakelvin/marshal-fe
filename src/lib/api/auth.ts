@@ -78,7 +78,7 @@ export async function register(input: {
           last_name: input.lastName,
           full_name: fullName,
         },
-        emailRedirectTo: `${siteOrigin()}/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${siteOrigin()}/auth/callback?next=/dashboard`,
       },
     });
     if (error) throw new ApiError(error.message, 400);

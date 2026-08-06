@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { listCollections } from "@/lib/api/collections";
-import { listKnowledgeItems } from "@/lib/api/knowledge";
+import { listKnowledgeItemsServer } from "@/lib/api/knowledge-server";
 import { getCurrentUser } from "@/lib/api/user-server";
 
 export const metadata = { title: "Profile" };
@@ -24,7 +24,7 @@ export default async function ProfilePage() {
   const [user, collections, items] = await Promise.all([
     getCurrentUser(),
     listCollections(),
-    listKnowledgeItems(),
+    listKnowledgeItemsServer().catch(() => []),
   ]);
 
   const initials =

@@ -1,13 +1,13 @@
 import { getInsights, getWeeklyProgress } from "@/lib/api/user";
 import { getCurrentUser } from "@/lib/api/user-server";
 import { listCollections } from "@/lib/api/collections";
-import { listKnowledgeItems } from "@/lib/api/knowledge";
+import { listKnowledgeItemsServer } from "@/lib/api/knowledge-server";
 
 /** Aggregate payload for the dashboard page. */
 export async function getDashboardData() {
   const [user, items, collections, insights, weekly] = await Promise.all([
     getCurrentUser(),
-    listKnowledgeItems(),
+    listKnowledgeItemsServer().catch(() => []),
     listCollections(),
     getInsights(),
     getWeeklyProgress(),

@@ -67,5 +67,6 @@ Data access goes through `src/lib/api/*` (not pages → Supabase/Node directly).
    - Site URL: your app origin (e.g. `http://localhost:3000`)
    - Redirect URLs: `http://localhost:3000/auth/callback` (+ production URL)
 4. Run `supabase/migrations/001_surveys.sql` for the survey table.
+5. Run `supabase/migrations/002_knowledge_items.sql` for Save / Library.
 
 Copy `.env.example` → `.env.local`.

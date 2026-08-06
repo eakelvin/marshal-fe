@@ -42,6 +42,16 @@ export interface KnowledgeItem {
   processed: boolean;
   image?: string;
   collectionIds: string[];
+  /** Optional user context captured at save time */
+  notes?: string;
+  /** Pipeline status for async agents */
+  status?: "queued" | "processing" | "collected" | "ready" | "failed";
+  /** Short source description (og:description / excerpt) after Collector */
+  description?: string;
+  /** True once Collector stored page text */
+  hasContent?: boolean;
+  /** Last Collector error, if any */
+  fetchError?: string;
 }
 
 export interface Collection {

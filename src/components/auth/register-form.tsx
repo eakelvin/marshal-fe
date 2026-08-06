@@ -18,6 +18,7 @@ export function RegisterForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -25,6 +26,10 @@ export function RegisterForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -32,7 +37,7 @@ export function RegisterForm() {
       if (result.needsEmailConfirmation) {
         router.replace(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
-        router.replace("/onboarding");
+        router.replace("/dashboard");
         router.refresh();
       }
     } catch (err) {
@@ -47,7 +52,7 @@ export function RegisterForm() {
     setGoogleLoading(true);
     setError(null);
     try {
-      await signInWithGoogle("/onboarding");
+      await signInWithGoogle("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Google sign-in failed");
       setGoogleLoading(false);
@@ -111,6 +116,18 @@ export function RegisterForm() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            required
+            autoComplete="new-password"
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
         {error && (

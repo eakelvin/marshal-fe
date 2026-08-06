@@ -50,8 +50,19 @@ export function KnowledgeCard({
           </Badge>
         ))}
         {!item.processed && (
-          <Badge variant="outline" className="text-[10px] border-warning/40 text-warning">
-            Processing
+          <Badge
+            variant="outline"
+            className={
+              item.status === "failed"
+                ? "text-[10px] border-destructive/40 text-destructive"
+                : "text-[10px] border-warning/40 text-warning"
+            }
+          >
+            {item.status === "failed"
+              ? "Failed"
+              : item.hasContent || item.status === "collected"
+                ? "Summarizing"
+                : "Collecting"}
           </Badge>
         )}
         <ArrowUpRight
