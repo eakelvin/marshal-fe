@@ -94,7 +94,7 @@ async function summarizeWithGemini(
   input: SummarizerInput,
   apiKey: string
 ): Promise<SummarizerResult> {
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
   const content = input.contentText.slice(0, MAX_CONTENT_FOR_LLM);
 
   const prompt = [

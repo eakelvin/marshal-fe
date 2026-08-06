@@ -25,9 +25,12 @@ export default async function DashboardPage() {
     collectionCount,
     insights,
     weeklyProgress,
+    thisWeekSaves,
+    weekHint,
   } = await getDashboardData();
 
   const firstName = getFirstName(user);
+  const aiCollections = collections.filter((c) => c.visibility === "ai").length;
 
   return (
     <div className="space-y-8">
@@ -39,7 +42,8 @@ export default async function DashboardPage() {
             Welcome back, {firstName}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Your second brain has {user.itemsSaved} items ready. Keep the streak alive.
+            Your second brain has {user.itemsSaved}{" "}
+            {user.itemsSaved === 1 ? "item" : "items"} ready. Keep the streak alive.
           </p>
         </div>
         <Button className="gap-1.5 shrink-0" render={<Link href="/save" />}>
@@ -55,25 +59,28 @@ export default async function DashboardPage() {
             label: "Learning streak",
             value: `${user.streak} days`,
             icon: Flame,
-            hint: "Personal best",
+            hint: user.streak > 0 ? "Keep it going" : "Save today to start",
           },
           {
             label: "This week",
-            value: "24 saves",
+            value: `${thisWeekSaves} ${thisWeekSaves === 1 ? "save" : "saves"}`,
             icon: TrendingUp,
-            hint: "+18% vs last week",
+            hint: weekHint,
           },
           {
             label: "Reviews done",
             value: String(user.reviewsCompleted),
             icon: Sparkles,
-            hint: "12 due today",
+            hint: "Coming soon",
           },
           {
             label: "Collections",
             value: String(collectionCount),
             icon: Sparkles,
-            hint: "2 AI-curated",
+            hint:
+              aiCollections > 0
+                ? `${aiCollections} AI-curated`
+                : "Create your first",
           },
         ].map((stat) => (
           <div
