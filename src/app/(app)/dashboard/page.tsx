@@ -1,36 +1,110 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Bookmark,
   Flame,
+  Link2,
   Plus,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
-import { WeeklyChart } from "@/components/dashboard/weekly-chart";
+// import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { getDashboardData } from "@/lib/api/dashboard";
 import { getFirstName } from "@/lib/api/user-mapper";
 
 export const metadata = { title: "Dashboard" };
 
+const FIRST_SAVE_STEPS = [
+  {
+    step: "1",
+    title: "Paste a URL",
+    body: "Article, video, paper, or anything worth keeping.",
+  },
+  {
+    step: "2",
+    title: "Marshal digests it",
+    body: "We pull the content and build a summary with takeaways.",
+  },
+  {
+    step: "3",
+    title: "Find it in your library",
+    body: "Come back anytime — your saves live in one place.",
+  },
+] as const;
+
 export default async function DashboardPage() {
   const {
     user,
     recent,
-    today,
-    recommended,
+    // today,
+    // recommended,
     collections,
     collectionCount,
-    insights,
-    weeklyProgress,
+    // insights,
+    // weeklyProgress,
     thisWeekSaves,
     weekHint,
   } = await getDashboardData();
 
   const firstName = getFirstName(user);
+  const isEmpty = user.itemsSaved === 0;
   const aiCollections = collections.filter((c) => c.visibility === "ai").length;
+
+  if (isEmpty) {
+    return (
+      <div className="space-y-8">
+        <section>
+          <p className="text-sm text-muted-foreground">Getting started</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+            Welcome, {firstName}
+          </h1>
+          <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
+            Your second brain starts with one link. Paste something you want to
+            remember — Marshal handles the rest.
+          </p>
+        </section>
+
+        <EmptyState
+          icon={Link2}
+          title="Save your first link"
+          description="Drop in an article, YouTube video, paper, or any URL. We’ll collect it and summarize it for you."
+          action={
+            <Button className="gap-1.5" render={<Link href="/save" />}>
+              <Plus className="size-3.5" />
+              Save a link
+            </Button>
+          }
+          className="py-12 sm:py-16"
+        />
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-medium tracking-tight">How it works</h2>
+          <ol className="grid gap-3 sm:grid-cols-3">
+            {FIRST_SAVE_STEPS.map((item) => (
+              <li
+                key={item.step}
+                className="rounded-xl border border-border/80 bg-card/50 p-4"
+              >
+                <span className="text-xs font-medium text-primary">
+                  Step {item.step}
+                </span>
+                <p className="mt-2 text-sm font-medium tracking-tight">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  {item.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -52,6 +126,7 @@ export default async function DashboardPage() {
         </Button>
       </section>
 
+      {/* Stats row */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
@@ -95,7 +170,6 @@ export default async function DashboardPage() {
           </div>
         ))}
       </section>
-
 
       {/* Today's Learning + Weekly + AI Insights — restore when ready
       <div className="grid gap-6 lg:grid-cols-5">
@@ -152,11 +226,26 @@ export default async function DashboardPage() {
             <ArrowRight className="size-3.5" data-icon="inline-end" />
           </Button>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {recent.map((item) => (
-            <KnowledgeCard key={item.id} item={item} compact />
-          ))}
-        </div>
+        {recent.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {recent.map((item) => (
+              <KnowledgeCard key={item.id} item={item} compact />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={Bookmark}
+            title="No recent saves"
+            description="Save a link to see it here."
+            action={
+              <Button size="sm" className="gap-1.5" render={<Link href="/save" />}>
+                <Plus className="size-3.5" />
+                Quick Save
+              </Button>
+            }
+            className="py-10"
+          />
+        )}
       </section>
 
       {/* Recommended + Collections — restore when ready
