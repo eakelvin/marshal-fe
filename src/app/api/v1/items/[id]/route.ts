@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { getKnowledgeItemServer } from "@/lib/api/knowledge-server";
+import {
+  deleteKnowledgeItemServer,
+  getKnowledgeItemServer,
+} from "@/lib/api/knowledge-server";
 import { createClient } from "@/lib/supabase/server";
 
 type RouteContext = {
@@ -33,6 +36,38 @@ export async function GET(_request: Request, context: RouteContext) {
       error instanceof Error ? error.message : "Could not load item";
     console.error("[items GET id]", error);
     const status = message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ message }, { status });
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  const { id } = await context.params;
+  if (!id) {
+    return NextResponse.json({ message: "Missing id" }, { status: 400 });
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    await deleteKnowledgeItemServer(id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not delete item";
+    console.error("[items DELETE id]", error);
+    const status =
+      message === "Unauthorized"
+        ? 401
+        : message === "Item not found"
+          ? 404
+          : 500;
     return NextResponse.json({ message }, { status });
   }
 }

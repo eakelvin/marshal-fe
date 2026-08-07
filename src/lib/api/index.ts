@@ -16,6 +16,7 @@ export {
   listKnowledgeItems,
   getKnowledgeItem,
   createKnowledgeItem,
+  deleteKnowledgeItem,
   processKnowledgeItem,
 } from "@/lib/api/knowledge";
 export { listCollections, getCollection } from "@/lib/api/collections";

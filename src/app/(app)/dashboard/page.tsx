@@ -52,7 +52,6 @@ export default async function DashboardPage() {
         </Button>
       </section>
 
-      {/* Stats row */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
@@ -97,8 +96,9 @@ export default async function DashboardPage() {
         ))}
       </section>
 
+
+      {/* Today's Learning + Weekly + AI Insights — restore when ready
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* Today's Learning */}
         <section className="lg:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium tracking-tight">Today&apos;s Learning</h2>
@@ -114,7 +114,6 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Weekly + Streak side */}
         <section className="lg:col-span-2 space-y-4">
           <h2 className="text-sm font-medium tracking-tight">Weekly Progress</h2>
           <div className="rounded-xl border border-border/80 bg-card/50 p-4">
@@ -142,6 +141,7 @@ export default async function DashboardPage() {
           </div>
         </section>
       </div>
+      */}
 
       {/* Recently Saved */}
       <section className="space-y-4">
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Recommended + Collections */}
+      {/* Recommended + Collections — restore when ready
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">
           <h2 className="text-sm font-medium tracking-tight">Recommended Knowledge</h2>
@@ -205,6 +205,7 @@ export default async function DashboardPage() {
           </div>
         </section>
       </div>
+      */}
     </div>
   );
 }

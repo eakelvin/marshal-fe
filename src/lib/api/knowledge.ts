@@ -135,6 +135,24 @@ export async function getKnowledgeItem(
   }
 }
 
+export async function deleteKnowledgeItem(id: string): Promise<void> {
+  if (useProductFixtures()) {
+    const idx = knowledgeItems.findIndex((item) => item.id === id);
+    if (idx === -1) throw new ApiError("Not found", 404);
+    knowledgeItems.splice(idx, 1);
+    return;
+  }
+
+  if (env.apiProvider === "supabase") {
+    await clientApiFetch<Record<string, never>>(`/api/v1/items/${id}`, {
+      method: "DELETE",
+    });
+    return;
+  }
+
+  await api(`/v1/items/${id}`, { method: "DELETE" });
+}
+
 /** Kick / retry Collector + Summarizer for an item. */
 export async function processKnowledgeItem(
   id: string
