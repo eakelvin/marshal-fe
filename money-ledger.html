@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — How Money Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13223a;
+    --ink-2:#1c3252;
+    --paper:#f4efe1;
+    --paper-2:#ece4cf;
+    --brass:#b08d57;
+    --brass-light:#d9bd8a;
+    --credit:#3c6b4a;
+    --credit-bg:#e4ede2;
+    --debit:#93463a;
+    --debit-bg:#f3e3df;
+    --line: rgba(19,34,58,0.14);
+    --line-strong: rgba(19,34,58,0.28);
+    --text:#1b2434;
+    --text-soft:#5b6472;
+    --text-faint:#8b93a0;
+    --shadow: 0 1px 2px rgba(19,34,58,0.06);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{ max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .masthead{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom: 1px solid rgba(244,239,225,0.18);
+    padding-bottom:16px; margin-bottom:20px;
+  }
+  .masthead h1{
+    font-family:'Spectral', serif; font-weight:600; font-size:26px; margin:0;
+    letter-spacing:0.3px;
+  }
+  .masthead .sub{ font-size:12px; color: rgba(244,239,225,0.55); font-family:'IBM Plex Mono',monospace; margin-top:4px; text-transform:uppercase; letter-spacing:1px;}
+  .streak-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color: var(--brass-light);
+    border:1px solid rgba(217,189,138,0.4); border-radius:20px; padding:6px 12px;
+    white-space:nowrap;
+  }
+
+  nav{ display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap;}
+  nav button{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
+    background:transparent; color: rgba(244,239,225,0.6);
+    border:1px solid rgba(244,239,225,0.2); border-radius:8px;
+    padding:8px 14px; cursor:pointer; transition: all .15s ease;
+    display:flex; align-items:center; gap:6px;
+  }
+  nav button:hover{ border-color: rgba(244,239,225,0.45); color: var(--paper);}
+  nav button.active{ background: var(--paper); color: var(--ink); border-color: var(--paper);}
+  nav button .badge{
+    background: var(--debit); color:#fff; font-family:'IBM Plex Mono',monospace;
+    font-size:11px; border-radius:10px; padding:1px 7px; min-width:16px; text-align:center;
+  }
+  nav button.active .badge{ background: var(--debit); color:#fff; }
+
+  .card{
+    background: var(--paper); color: var(--text); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px 24px; margin-bottom: 16px;
+  }
+  .card h2{ font-family:'Spectral',serif; font-weight:600; font-size:19px; margin:0 0 4px;}
+  .card .lede{ color: var(--text-soft); font-size:14px; margin:0 0 16px; line-height:1.55;}
+
+  /* LEDGER / DASHBOARD */
+  .ledger-header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom: 1px dashed var(--line-strong); padding-bottom:10px; margin-bottom:14px;
+  }
+  .ledger-header .balance-label{ font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--text-soft); font-family:'IBM Plex Mono',monospace;}
+  .ledger-header .balance-value{ font-family:'IBM Plex Mono',monospace; font-size:30px; font-weight:600; color:var(--ink);}
+  .stat-row{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:18px;}
+  .stat-box{ background: var(--paper-2); border-radius:8px; padding:12px 14px;}
+  .stat-box .n{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color: var(--ink);}
+  .stat-box .l{ font-size:11px; color: var(--text-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;}
+
+  table.ledger-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  table.ledger-table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-faint); font-weight:500; padding:6px 6px; border-bottom:1px solid var(--line-strong);}
+  table.ledger-table td{ padding:9px 6px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  table.ledger-table td.num{ text-align:right; }
+  .pill{ display:inline-block; font-size:10px; padding:2px 8px; border-radius:20px; font-family:'Inter',sans-serif; font-weight:500;}
+  .pill.credit{ background:var(--credit-bg); color:var(--credit);}
+  .pill.debit{ background:var(--debit-bg); color:var(--debit);}
+  .pill.neutral{ background:var(--paper-2); color:var(--text-soft);}
+  .progress-mini{ width:70px; height:5px; background:var(--line); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle;}
+  .progress-mini > div{ height:100%; background: var(--brass);}
+  .row-link{ cursor:pointer; }
+  .row-link:hover{ background: rgba(176,141,87,0.08); }
+
+  /* BUTTONS */
+  .btn{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:500; cursor:pointer;
+    border-radius:7px; padding:9px 16px; border:1px solid var(--line-strong);
+    background:#fff; color:var(--text); transition: all .12s ease;
+  }
+  .btn:hover{ border-color: var(--ink); }
+  .btn.primary{ background: var(--ink); color:var(--paper); border-color:var(--ink);}
+  .btn.primary:hover{ background:var(--ink-2); }
+  .btn.brass{ background: var(--brass); color:#fff; border-color:var(--brass);}
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+
+  /* CURRICULUM LIST */
+  .module-row{
+    display:flex; align-items:center; gap:14px; padding:14px 4px; border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .module-row:last-child{ border-bottom:none;}
+  .module-row:hover .module-title{ color: var(--brass); }
+  .module-num{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-faint); width:20px; flex-shrink:0;}
+  .module-title{ font-family:'Spectral',serif; font-weight:600; font-size:16px; transition:color .12s ease;}
+  .module-meta{ font-size:12px; color:var(--text-soft); margin-top:2px;}
+  .module-right{ margin-left:auto; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-soft); flex-shrink:0;}
+
+  /* MODULE READER */
+  .back-link{ font-size:13px; color: rgba(244,239,225,0.6); cursor:pointer; margin-bottom:14px; display:inline-block;}
+  .back-link:hover{ color:var(--paper);}
+  .overview-text{ font-size:15px; line-height:1.75; color:var(--text); }
+  .flash-list{ margin-top:6px; }
+  .flash-item{ border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer;}
+  .flash-item .fq{ font-size:13.5px; font-weight:500; }
+  .flash-item .fa{ font-size:13px; color:var(--text-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); line-height:1.6; display:none;}
+  .flash-item.open .fa{ display:block; }
+  .flash-item .status{ font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-faint); margin-top:6px; font-family:'IBM Plex Mono',monospace;}
+
+  /* REVIEW / QUIZ CARD */
+  .review-stage{ text-align:center; padding: 20px 10px 6px;}
+  .review-progress{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-faint); margin-bottom:16px;}
+  .flip-card{
+    background:#fff; border:1px solid var(--line-strong); border-radius:12px;
+    padding:36px 24px; min-height:140px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; line-height:1.6; cursor:pointer; margin-bottom:18px;
+  }
+  .flip-card .tag{ position:absolute; }
+  .flip-hint{ font-size:11px; color:var(--text-faint); margin-top:-10px; margin-bottom:18px;}
+  .rate-row{ display:grid; grid-template-columns: repeat(4,1fr); gap:8px;}
+  .rate-btn{ padding:12px 4px; border-radius:8px; border:1px solid var(--line-strong); background:#fff; cursor:pointer; font-family:'Inter',sans-serif;}
+  .rate-btn .k{ font-size:13px; font-weight:600; display:block;}
+  .rate-btn .d{ font-size:10px; color:var(--text-soft); margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+  .rate-btn.again{ border-color:var(--debit); color:var(--debit);}
+  .rate-btn.again:hover{ background:var(--debit-bg);}
+  .rate-btn.hard{ border-color:#a07a2f; color:#8a6524;}
+  .rate-btn.hard:hover{ background:#f3ecdb;}
+  .rate-btn.good{ border-color:var(--credit); color:var(--credit);}
+  .rate-btn.good:hover{ background:var(--credit-bg);}
+  .rate-btn.easy{ border-color:var(--ink); color:var(--ink);}
+  .rate-btn.easy:hover{ background:var(--paper-2);}
+
+  .empty-state{ text-align:center; padding:40px 10px; color:var(--text-soft);}
+  .empty-state .big{ font-family:'Spectral',serif; font-size:19px; color:var(--ink); margin-bottom:6px;}
+
+  /* QUIZ */
+  .quiz-q{ font-size:15px; font-weight:500; margin-bottom:14px; line-height:1.5;}
+  .quiz-opt{ display:block; width:100%; text-align:left; padding:11px 14px; border:1px solid var(--line-strong); border-radius:8px; background:#fff; margin-bottom:8px; cursor:pointer; font-size:13.5px; font-family:'Inter',sans-serif;}
+  .quiz-opt:hover{ border-color:var(--ink);}
+  .quiz-opt.correct{ border-color:var(--credit); background:var(--credit-bg); color:var(--credit);}
+  .quiz-opt.wrong{ border-color:var(--debit); background:var(--debit-bg); color:var(--debit);}
+  .quiz-explain{ font-size:13px; color:var(--text-soft); background:var(--paper-2); border-radius:8px; padding:12px 14px; margin-top:10px; line-height:1.6;}
+  .quiz-score{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-soft);}
+
+  footer.note{ text-align:center; font-size:11px; color:rgba(244,239,225,0.35); margin-top:26px; font-family:'IBM Plex Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const STORAGE_KEY = 'money-ledger-state-v1';
+
+const MODULES = [
+{
+  id:'m1', title:'What money actually is', tagline:'Barter, function, and the leap to fiat',
+  overview:"Money solves the \"double coincidence of wants\" problem that makes barter so inefficient — both sides of a barter trade must want exactly what the other has. Money works because it's a universal intermediate good everyone accepts, and it does three jobs at once: medium of exchange (lets you trade), store of value (holds purchasing power over time), and unit of account (a common yardstick for pricing anything). Money has evolved through stages: commodity money (gold, cattle, salt — value came from the material itself), representative money (paper claims redeemable for a fixed amount of a commodity), and finally fiat money — value backed by nothing physical, only by government decree and collective trust. The last tether between money and a physical commodity broke in August 1971, when Nixon suspended the dollar's convertibility to gold (the \"Nixon Shock\"), ending the Bretton Woods system. Since then, essentially every major world currency has been pure fiat.",
+  cards:[
+    {q:'What problem does money solve that barter can\'t?', a:'Barter requires a "double coincidence of wants" — both parties must want exactly what the other has. Money removes this by acting as a universal intermediate good everyone accepts.'},
+    {q:'What are the 3 classic functions of money?', a:'Medium of exchange (facilitates trade), store of value (holds purchasing power over time), and unit of account (a common measure to price things).'},
+    {q:'Commodity money vs fiat money — what\'s the core difference?', a:'Commodity money has intrinsic value (gold, silver). Fiat money has no intrinsic value — it\'s valuable only because a government declares it legal tender and people trust it.'},
+    {q:'What happened in the 1971 "Nixon Shock"?', a:'Nixon suspended the dollar\'s convertibility to gold, ending the Bretton Woods system. Since then the dollar — and virtually all major currencies — has been pure fiat, backed by nothing but trust and law.'},
+    {q:'What is "representative money"?', a:'A middle historical stage — paper notes that are claims or receipts redeemable for a fixed amount of a commodity (like gold), e.g. early US gold certificates.'},
+    {q:'Why does fiat money hold value with nothing physical backing it?', a:'Legal tender laws (it must be accepted for debts), the government\'s power to tax (which creates demand for the currency to pay taxes), and collective trust in the issuing institution.'}
+  ],
+  quiz:[
+    {q:'What ended the direct convertibility of the US dollar to gold?', opts:['The Federal Reserve Act of 1913','The Bretton Woods Agreement of 1944','The Nixon Shock of 1971','The Gold Reserve Act of 1934'], correct:2, explain:'In August 1971 Nixon closed the "gold window," ending dollar-gold convertibility and effectively ending Bretton Woods.'},
+    {q:'Which of these is NOT one of the three classic functions of money?', opts:['Medium of exchange','Store of value','Unit of account','Source of interest'], correct:3, explain:'Interest is a byproduct of lending money, not one of money\'s defining functions.'},
+    {q:'Fiat currency derives its value primarily from:', opts:['Gold reserves held by the central bank','Legal tender status and public trust','The physical cost to print it','Foreign exchange reserves'], correct:1, explain:'With no commodity backing, fiat value rests entirely on legal tender laws and collective trust.'}
+  ]
+},
+{
+  id:'m2', title:'Banks and money creation', tagline:'Fractional reserves, and why loans create deposits',
+  overview:"Most money in the economy isn't printed by a central bank — it's created by ordinary commercial banks the moment they issue a loan. This is fractional reserve banking: banks hold only a fraction of deposits as reserves and can lend the rest out. The crucial and often-missed detail is that a bank doesn't lend out pre-existing deposits — it creates a brand new deposit in the borrower's account at the moment of lending, simultaneously booking a matching loan asset. \"Loans create deposits,\" not the other way around (a mechanism confirmed plainly by the Bank of England's own explainer). As that new money gets spent, redeposited, and lent again elsewhere, the money supply expands through repeated rounds — the money multiplier. On a bank's balance sheet, deposits are liabilities (money the bank owes back to you on demand), while loans are assets. Because banks only hold a fraction of deposits as ready cash, a bank run — many depositors demanding cash at once — can turn fear into a real collapse, which is exactly why deposit insurance (like the FDIC) exists: to remove the incentive to panic-withdraw.",
+  cards:[
+    {q:'What is fractional reserve banking?', a:'Banks are only required to hold a fraction of deposits as reserves (cash or central bank reserves) and lend out the rest, effectively multiplying the money supply through repeated lending and depositing.'},
+    {q:'"Loans create deposits" — what does that actually mean?', a:'When a bank issues a loan it doesn\'t hand out pre-existing money — it creates a brand new deposit (new money) in the borrower\'s account, simultaneously creating a matching loan asset. This is how most money in circulation is created.'},
+    {q:'What is the money multiplier effect?', a:'When lent-out money is redeposited elsewhere and lent again, an initial deposit can support a much larger total increase in the money supply, limited by reserve and capital requirements.'},
+    {q:'What\'s on a bank\'s balance sheet, in simple terms?', a:'Assets = loans made + reserves + securities held. Liabilities = customer deposits (they\'re liabilities because the bank owes that money back to you) + borrowings. Equity = assets minus liabilities.'},
+    {q:'What is a bank run, and why is it dangerous?', a:'Many depositors withdrawing at once out of fear of insolvency. Because banks hold only a fraction of deposits as cash, they can\'t pay everyone at once — turning fear into a self-fulfilling collapse.'},
+    {q:'What does deposit insurance (e.g. FDIC) actually protect against?', a:'It guarantees deposits up to a limit even if a bank fails, specifically designed to prevent bank runs by removing the incentive to panic-withdraw.'}
+  ],
+  quiz:[
+    {q:'When a commercial bank issues a new loan, what actually happens?', opts:['It transfers money out of its own reserves to the borrower','It creates a brand new deposit, effectively creating new money','It borrows the exact amount from the central bank first','It reduces its own capital by the loan amount'], correct:1, explain:'Loans create deposits: the bank books a new deposit and a matching loan asset simultaneously.'},
+    {q:'Why are customer deposits listed as liabilities on a bank\'s balance sheet?', opts:['Because the bank owes that money back to depositors on demand','Because deposits are taxed at source','Because deposits reduce the bank\'s total assets','It\'s an accounting convention with no real meaning'], correct:0, explain:'A deposit is money the bank owes you — that\'s exactly what a liability is.'},
+    {q:'What primarily protects a modern bank against a bank run?', opts:['Higher reserve requirements alone','Deposit insurance and central bank backstops (lender of last resort)','Gold reserves','Government price controls'], correct:1, explain:'Insurance and lender-of-last-resort facilities remove the incentive to panic-withdraw in the first place.'}
+  ]
+},
+{
+  id:'m3', title:'Central banks and monetary policy', tagline:'How the Fed and its peers steer the economy',
+  overview:"Central banks like the Federal Reserve, ECB, and Bank of England manage the money supply and interest rates in pursuit of policy goals — for the Fed, a \"dual mandate\" of maximum sustainable employment and stable prices (interpreted as roughly 2% inflation). Their main everyday tool is steering short-term interest rates through open market operations: buying or selling government securities to add or remove reserves from the banking system. Raising rates makes borrowing costlier and saving more attractive, cooling spending and inflation; cutting rates does the reverse. When rates are already near zero and more stimulus is needed, central banks turn to quantitative easing (QE) — large-scale purchases of longer-term bonds to push money into the system and pull down longer-term yields. Central banks also act as lender of last resort, lending to solvent-but-illiquid banks during a crisis to stop panics from spreading, since they can create reserves without limit. Most modern central banks are deliberately structured to be independent from day-to-day political control, to insulate policy from short-term pressure that could otherwise fuel runaway inflation.",
+  cards:[
+    {q:'What is the Federal Reserve\'s "dual mandate"?', a:'Maximum sustainable employment and stable prices — typically interpreted as roughly 2% inflation.'},
+    {q:'How does raising interest rates fight inflation?', a:'Higher rates make borrowing more expensive and saving more attractive, which cools spending and investment, slowing demand and price growth.'},
+    {q:'What are open market operations?', a:'The central bank buying or selling government securities to add or remove reserves from the banking system, directly steering short-term interest rates and money supply.'},
+    {q:'What is quantitative easing (QE)?', a:'Large-scale central bank purchases of longer-term securities to inject money into the economy when short-term rates are already near zero, pushing down longer-term rates and boosting liquidity.'},
+    {q:'What does "lender of last resort" mean?', a:'The central bank\'s role of lending to solvent-but-illiquid banks during a crisis to prevent bank runs from spreading, since it can create reserves without limit.'},
+    {q:'Why are central banks typically designed to be independent from elected government?', a:'To insulate monetary policy from short-term political pressure — like politicians wanting low rates before an election — which could otherwise fuel runaway inflation.'}
+  ],
+  quiz:[
+    {q:'Which tool does a central bank use most routinely to steer short-term interest rates?', opts:['Printing physical currency','Open market operations (buying/selling government bonds)','Setting import tariffs','Adjusting the national budget'], correct:1, explain:'Open market operations are the day-to-day lever for hitting a target interest rate.'},
+    {q:'Quantitative easing is typically used when:', opts:['Inflation is dangerously high','Interest rates are already near zero and more stimulus is needed','The currency is too strong','Banks hold too much capital'], correct:1, explain:'QE is a substitute lever once conventional rate cuts have run out of room near zero.'},
+    {q:'The Fed\'s "dual mandate" refers to:', opts:['Managing both fiscal and monetary policy','Stable prices and maximum employment','Domestic and international currency stability','Regulating both banks and stock markets'], correct:1, explain:'These are the two explicit statutory goals Congress set for the Fed.'}
+  ]
+},
+{
+  id:'m4', title:'Money supply and inflation', tagline:'M0 to M2, MV=PQ, and why prices rise',
+  overview:"Economists track money in tiers of liquidity: M0 (physical cash plus bank reserves), M1 (M0 plus checking/demand deposits — spendable right now), and M2 (M1 plus savings accounts and small time deposits — slightly less liquid). The quantity theory of money, expressed as MV = PQ, links money supply (M), velocity — how fast money changes hands (V), the price level (P), and real output (Q). If money supply grows faster than real output while velocity holds steady, prices must rise: inflation. Inflation itself can come from different directions — demand-pull (too much money chasing limited goods) or cost-push (rising input costs like oil or wages forcing prices up regardless of demand). Hyperinflation — as in Weimar Germany, Zimbabwe, or more recently Venezuela — happens when a government prints money to cover spending far beyond what the real economy can absorb, destroying trust in the currency and spiraling into ever-faster money creation. Central banks generally fear the opposite extreme too: deflation can cause people to delay spending in anticipation of even lower prices, shrinking demand and risking a recessionary spiral — which is why most central banks target a small positive inflation rate rather than zero.",
+  cards:[
+    {q:'What\'s the difference between M0, M1 and M2?', a:'M0 = physical cash + bank reserves at the central bank. M1 = M0 + checking/demand deposits (spendable now). M2 = M1 + savings accounts and small time deposits (less liquid).'},
+    {q:'What is the quantity theory of money (MV=PQ)?', a:'Money supply (M) times velocity (V, how often it\'s spent) equals price level (P) times real output (Q). If M grows faster than Q and V is stable, prices (P) must rise — inflation.'},
+    {q:'Demand-pull vs cost-push inflation?', a:'Demand-pull: too much money/demand chasing limited goods, pulling prices up. Cost-push: rising input costs (like oil or wages) push producers to raise prices regardless of demand.'},
+    {q:'What typically causes hyperinflation?', a:'A government printing money to finance spending it can\'t cover with taxes or borrowing, far outpacing the real economy\'s growth — collapsing trust in the currency and spiraling into ever-faster price rises and money printing.'},
+    {q:'What is "velocity of money"?', a:'How many times a unit of currency is spent on goods and services in a given period. Falling velocity (e.g. people hoarding cash) can offset money-supply growth and keep inflation lower than expected.'},
+    {q:'Why do central banks fear deflation almost as much as inflation?', a:'Falling prices can cause people to delay spending, expecting even lower prices later — shrinking demand and potentially spiraling into recession. That\'s why central banks target mild, stable inflation rather than zero.'}
+  ],
+  quiz:[
+    {q:'According to the quantity theory of money, if money supply doubles while output and velocity stay constant, what happens to prices?', opts:['Prices roughly halve','Prices stay the same','Prices roughly double','Prices become unpredictable'], correct:2, explain:'With V and Q held constant, MV=PQ implies P moves in direct proportion to M.'},
+    {q:'Hyperinflation is most commonly triggered by:', opts:['Too much government saving','A government printing money to cover spending it can\'t otherwise finance','Central bank independence','Strong export growth'], correct:1, explain:'Runaway money creation to fund a deficit is the classic hyperinflation trigger.'},
+    {q:'M2 differs from M1 mainly by including:', opts:['Physical cash only','Savings accounts and small time deposits','Foreign currency reserves','Government bonds'], correct:1, explain:'M2 extends M1 to slightly less liquid savings-type deposits.'}
+  ]
+},
+{
+  id:'m5', title:'Government, debt and fiscal policy', tagline:'Deficits, Treasuries, and the national debt',
+  overview:"Fiscal policy — government taxing and spending decisions — is distinct from monetary policy, which central banks run. When a government spends more than it collects in taxes it runs a deficit, financed by issuing bonds (Treasury securities); the accumulated total of past deficits is the national debt. A more meaningful gauge of sustainability than the raw debt figure is the debt-to-GDP ratio, which compares debt to the economy's actual capacity to service it. Countries that borrow in their own currency — like the US — can, in a narrow technical sense, always create money to make nominal debt payments, so they don't face the same default risk as a household or a country borrowing in a foreign currency. But that ability isn't free: excessive money creation to cover debt risks real inflation, which is its own economic cost even without a formal default. This tension sits at the center of Modern Monetary Theory (MMT), a heterodox framework arguing that for currency-issuing governments, inflation — not solvency — is the true constraint on spending; most mainstream economists accept the mechanics but dispute how much room that really gives policymakers in practice. Fiscal and monetary policy also interact directly: large deficits can push central banks toward easier policy, while central bank rate hikes raise the government's own borrowing costs.",
+  cards:[
+    {q:'What\'s the difference between fiscal policy and monetary policy?', a:'Fiscal policy is government taxing and spending decisions, set by the legislature/executive. Monetary policy is central bank action on interest rates and money supply — different institutions, different tools.'},
+    {q:'What\'s the difference between a budget deficit and the national debt?', a:'A deficit is the annual shortfall (spending minus revenue) in a single year. National debt is the cumulative total of all past deficits minus surpluses, financed by outstanding bonds.'},
+    {q:'How does a government finance a deficit?', a:'Primarily by issuing government bonds (Treasury securities) that investors, institutions, foreign governments, and sometimes the central bank buy — borrowing from lenders who expect repayment with interest.'},
+    {q:'Why can a country like the US struggle to "default" like a household, yet still face real constraints?', a:'Because it borrows in its own currency, it can always create more money to make nominal debt payments — but doing so excessively risks real inflation, a genuine economic cost even without formal default.'},
+    {q:'What is the debt-to-GDP ratio, and why does it matter more than the raw debt number?', a:'It compares total debt to the size of the economy, showing debt relative to the country\'s capacity to service it — a more meaningful sustainability gauge than the dollar figure alone.'},
+    {q:'What is Modern Monetary Theory (MMT), in one sentence?', a:'A heterodox framework arguing that countries which issue their own fiat currency and borrow in it face no solvency constraint — they can always print to pay debts — so the real limit on spending is inflation, not deficits; most mainstream economists dispute how far this actually extends.'}
+  ],
+  quiz:[
+    {q:'Government bonds (Treasuries) are essentially:', opts:['Equity ownership in the government','IOUs — loans from investors to the government, repaid with interest','Tax receipts','Bank reserves'], correct:1, explain:'A bond is a debt instrument: the buyer lends money and expects repayment plus interest.'},
+    {q:'The national debt is best described as:', opts:['This year\'s budget shortfall alone','The cumulative total of past deficits, minus surpluses','Total money supply in the economy','Total tax revenue collected'], correct:1, explain:'It\'s the running total accumulated over many years of deficits and surpluses.'},
+    {q:'MMT\'s central and most contested claim is that:', opts:['Deficits are always harmful','For currency-issuing governments, inflation — not solvency — is the real constraint on spending','Taxes should be abolished entirely','Central banks should be eliminated'], correct:1, explain:'This is MMT\'s core reframing, and the part mainstream economists push back on hardest.'}
+  ]
+},
+{
+  id:'m6', title:'Interest, credit and debt cycles', tagline:'Compounding, leverage, and Dalio\'s long cycle',
+  overview:"Interest is the price of money over time — shaped by the central bank's benchmark rate, inflation expectations, and the borrower's credit risk. Compound interest — interest earned on both principal and previously accumulated interest — makes debt and savings grow exponentially rather than linearly, so small rate differences compound into large gaps over decades. Ray Dalio's debt cycle framework nests two cycles inside each other: short-term cycles (roughly 5-8 years), which track normal credit expansion and contraction around the business cycle, sit inside long-term cycles (roughly 50-75 years), where total debt burdens build gradually across an economy for decades until a major deleveraging is eventually forced. Deleveraging — paying down excessive debt across an economy — can happen through austerity, default or restructuring, taxing the wealthy to redistribute and pay down debt, or the central bank printing money; in practice it's usually some mix of all four. Leverage — using borrowed money to size up an investment — is a double-edged tool: it magnifies gains when things go well, but equally magnifies losses, and can wipe out an investor's equity entirely if the value of the underlying asset falls far enough.",
+  cards:[
+    {q:'What is compound interest, and why does it matter so much over time?', a:'Interest calculated on both the original principal and previously accumulated interest. Over long periods this creates exponential rather than linear growth — small rate differences compound into large gaps over decades.'},
+    {q:'What determines the interest rate a given borrower is offered?', a:'The central bank\'s benchmark rate (the floor), inflation expectations (lenders need a real return above inflation), and the borrower\'s credit risk — riskier borrowers pay a higher spread.'},
+    {q:'What is leverage, and why is it a double-edged sword?', a:'Using borrowed money to increase the size of an investment. It magnifies gains when the investment does well, but equally magnifies losses — and can wipe out equity entirely if the value falls enough.'},
+    {q:'What\'s the difference between a short-term and long-term debt cycle (Dalio\'s framework)?', a:'Short-term cycles (~5-8 years) track normal credit expansion and contraction tied to the business cycle. Long-term cycles (~50-75 years) track decades of gradually rising total debt burden across an economy until a major deleveraging is forced.'},
+    {q:'What is "deleveraging," and what forms can it take?', a:'The process of paying down excessive debt across an economy — through austerity, default/restructuring, taxing the wealthy to redistribute and pay debts, or the central bank printing money. Usually some mix of all four.'},
+    {q:'Why do rising interest rates hurt the price of existing fixed-rate bonds?', a:'Existing bonds pay a fixed rate. When new bonds are issued at a higher rate, older lower-rate bonds become less attractive, so their market price falls to make their effective yield competitive.'}
+  ],
+  quiz:[
+    {q:'In Ray Dalio\'s framework, a long-term debt cycle typically spans roughly:', opts:['1-2 years','5-8 years','50-75 years','200+ years'], correct:2, explain:'The long-term cycle plays out across generations, unlike the shorter business-cycle-linked one.'},
+    {q:'If interest rates rise, what typically happens to the price of previously issued fixed-rate bonds?', opts:['Their price rises','Their price falls','No effect at all','They automatically convert to the new rate'], correct:1, explain:'A fixed old coupon becomes less attractive next to new higher-rate bonds, so the price adjusts down.'},
+    {q:'Leverage amplifies which of the following?', opts:['Only gains','Only losses','Both gains and losses','Neither'], correct:2, explain:'Leverage scales the outcome in both directions — that\'s exactly what makes it risky.'}
+  ]
+},
+{
+  id:'m7', title:'Financial markets', tagline:'Stocks, bonds, and the yield curve',
+  overview:"Financial markets channel savings into investment. Stock markets let companies raise capital by selling ownership shares; owning a share is a claim on future profits via dividends or price appreciation, with no repayment guarantee if the company fails. Bond markets let governments and companies borrow directly from investors at a fixed or floating rate; a bondholder is a creditor, not an owner, and is generally repaid before shareholders if the issuer goes under. Because a bond's fixed coupon becomes more or less attractive as new rates move, bond prices and interest rates move inversely. The yield curve — a plot of bond yields across maturities — is a widely watched economic signal: it normally slopes upward, but an inversion (short-term yields exceeding long-term ones) has historically preceded most US recessions, because it reflects markets pricing in future rate cuts due to expected economic weakness. Markets are forward-looking in general — stock prices tend to move on changing expectations about the future, not just reaction to news that's already happened. Derivatives — contracts whose value is derived from an underlying asset like a stock, bond, commodity, or index — sit alongside stocks and bonds as tools for hedging risk or speculating.",
+  cards:[
+    {q:'What does buying a share of stock actually give you?', a:'Partial ownership of a company — a claim on its future profits via dividends or share price appreciation, and generally voting rights, but no repayment guarantee if the company fails.'},
+    {q:'What does buying a bond give you, and how does that differ from a stock?', a:'A bond is a loan to the issuer that promises fixed interest payments and return of principal at maturity — you\'re a creditor, not an owner, and are generally repaid before shareholders if the issuer fails.'},
+    {q:'Why do bond prices move inversely to interest rates?', a:'A bond\'s fixed coupon becomes less or more attractive as new rates change. When rates rise, older lower-yield bonds must fall in price so their effective yield matches the new market rate, and vice versa.'},
+    {q:'What is the yield curve, and what does an "inverted" one signal?', a:'A plot of bond yields across maturities. It normally slopes upward. An inversion (short-term yields exceed long-term) has historically preceded most US recessions, signaling markets expect future rate cuts due to economic weakness.'},
+    {q:'What is a derivative, in plain terms?', a:'A financial contract whose value is derived from an underlying asset — a stock, bond, commodity, currency, or index — used to hedge risk or to speculate, e.g. options and futures.'},
+    {q:'Why do stock prices often move before economic data confirms a trend?', a:'Markets are forward-looking — prices reflect investors\' collective expectations about future earnings and conditions, so they tend to move in anticipation of news rather than in reaction to it.'}
+  ],
+  quiz:[
+    {q:'An inverted yield curve (short-term rates above long-term rates) has historically been associated with:', opts:['Strong upcoming growth','An approaching recession','Currency appreciation','Falling unemployment'], correct:1, explain:'Inversions have preceded most modern US recessions, reflecting expected future rate cuts.'},
+    {q:'If you own a corporate bond and the company goes bankrupt, where do you stand relative to shareholders in getting repaid?', opts:['After shareholders','Same priority as shareholders','Before shareholders','No claim at all'], correct:2, explain:'Creditors (bondholders) are repaid ahead of equity holders in a bankruptcy.'},
+    {q:'A derivative\'s value is:', opts:['Set independently of any other asset','Derived from an underlying asset','Always equal to a company\'s stock price','Fixed by the central bank'], correct:1, explain:'That relationship to an underlying asset is the defining feature of a derivative.'}
+  ]
+},
+{
+  id:'m8', title:'The global system', tagline:'Exchange rates, trade, and the dollar\'s reserve role',
+  overview:"Exchange rates — how much one currency is worth in terms of another — move mainly on relative interest rates (higher rates tend to attract foreign capital, strengthening a currency), inflation expectations, trade balances, and overall demand for a country's assets. A country's current account (trade in goods and services, plus income flows) and capital account (investment flows) must balance by definition — a persistent trade deficit is mirrored by capital inflows financing it. The US dollar functions as the world's dominant reserve currency: most global trade, key commodities like oil, and central bank reserves are priced or held in dollars — a status rooted in the 1944 Bretton Woods agreement and sustained since by the depth, liquidity, and trust in US financial markets, even after the gold peg ended in 1971. This \"exorbitant privilege\" lets the US borrow more cheaply than it otherwise could, but it also means US monetary policy has outsized ripple effects on the rest of the world. Currencies can be pegged (fixed against another currency, defended by the central bank buying or selling reserves) or floating (set by open market supply and demand) — and a sudden loss of confidence in a currency, especially one defending an unsustainable peg or heavy foreign-currency debt, can trigger a currency crisis of rapid depreciation and capital flight.",
+  cards:[
+    {q:'What mainly determines a currency\'s exchange rate day to day?', a:'Relative interest rates (higher rates attract foreign capital, strengthening a currency), inflation expectations, trade balances, and overall demand for the country\'s assets.'},
+    {q:'What is a reserve currency, and why does it matter?', a:'A currency held in large quantities by foreign governments and central banks as part of their reserves, and widely used to price global trade. The dollar\'s dominant reserve status lets the US borrow more cheaply and gives it outsized global monetary influence.'},
+    {q:'What was the Bretton Woods system (1944), and how did it shape today\'s global system?', a:'A post-WWII agreement pegging major currencies to the US dollar, which was itself pegged to gold. It established the dollar as the anchor of the global monetary system — a role it kept even after the gold peg ended in 1971.'},
+    {q:'What does it mean for a currency to be "pegged" versus "floating"?', a:'A pegged currency has its value fixed or tightly managed against another currency, usually defended by the central bank buying/selling reserves. A floating currency\'s value is set by open market supply and demand.'},
+    {q:'Why can a strong domestic currency hurt a country\'s exporters?', a:'A strong currency makes that country\'s goods more expensive for foreign buyers in their own currency, reducing export competitiveness, while making imports cheaper.'},
+    {q:'What is a "currency crisis"?', a:'A sudden, severe loss of confidence in a currency\'s value — often when a country can\'t defend a peg or repay foreign-currency debt — leading to rapid depreciation, capital flight, and often high inflation.'}
+  ],
+  quiz:[
+    {q:'The US dollar\'s role as the world\'s primary reserve currency is often traced back to:', opts:['The gold rush of 1849','The Bretton Woods Agreement of 1944','The creation of the euro','The 2008 financial crisis'], correct:1, explain:'Bretton Woods formally anchored the global system to the dollar, a role it retained after 1971.'},
+    {q:'A country running a persistent trade deficit is, by balance-of-payments accounting, running:', opts:['A matching current account deficit financed by capital inflows','A budget surplus','A guaranteed stronger currency','Automatically lower inflation'], correct:0, explain:'Current and capital accounts must balance — a trade deficit is mirrored by financing inflows.'},
+    {q:'When a central bank raises interest rates relative to other countries, its currency will typically:', opts:['Weaken, as capital flows out','Strengthen, as foreign capital is attracted by higher returns','Be unaffected','Automatically become a reserve currency'], correct:1, explain:'Higher relative returns tend to draw in foreign investment, bidding the currency up.'}
+  ]
+},
+{
+  id:'m9', title:'Crypto, CBDCs and modern debates', tagline:'Where digital money is testing the old rules',
+  overview:"Cryptocurrencies like Bitcoin introduced a new model: digitally scarce, decentralized money secured by cryptography and a distributed ledger (blockchain) rather than a central issuer. Bitcoin's supply is capped at 21 million coins by protocol rule — a deliberate contrast to the discretionary issuance of fiat money. Blockchain achieves trust without a central authority through a ledger replicated across many independent participants, combined with a consensus mechanism that makes falsifying the transaction history economically costly. Stablecoins try to combine crypto's fast digital transfer rails with price stability, typically by pegging 1:1 to a fiat currency like the US dollar. Central Bank Digital Currencies (CBDCs) are different again: a digital form of a country's own existing fiat currency, issued directly by the central bank itself — centralized, unlike decentralized crypto, and simply a new form of the same national currency rather than a new asset. Many central banks have researched or piloted CBDCs (China's e-CNY furthest along; the Fed and ECB have researched without launching one, as of the most recent reliable information), motivated by faster settlement and new policy tools, but critics raise real concerns about financial surveillance and the erosion of cash-like privacy. For now, none of this has replaced the fiat banking and central-banking system covered in the earlier modules — crypto and CBDCs mostly operate alongside it.",
+  cards:[
+    {q:'What makes Bitcoin structurally different from fiat money?', a:'It\'s issued by no central authority — new supply follows a fixed, transparent protocol capped at 21 million coins, and transactions are verified by a decentralized network rather than a bank or government.'},
+    {q:'What is a stablecoin, and what problem is it trying to solve?', a:'A cryptocurrency designed to hold a stable value, usually pegged 1:1 to a fiat currency like the US dollar, aiming to combine crypto\'s fast digital transfer with the price stability regular crypto lacks.'},
+    {q:'What is a CBDC (Central Bank Digital Currency)?', a:'A digital form of a country\'s existing fiat currency, issued directly by the central bank — distinct from crypto because it\'s centralized and is simply a new form of the same national currency, not a new asset.'},
+    {q:'What\'s a key concern critics raise about CBDCs?', a:'Because a CBDC could let a central bank see, and potentially control, individual transactions directly, critics raise concerns about financial surveillance and the erosion of cash-like privacy.'},
+    {q:'How does blockchain achieve trust without a central authority?', a:'Through a distributed ledger replicated across many independent participants, combined with a consensus mechanism (like proof-of-work or proof-of-stake) that makes falsifying the transaction history economically costly.'},
+    {q:'Do cryptocurrencies currently replace the fiat banking and central-bank system?', a:'No — for now they operate mostly alongside it, used for speculation, some payments, and store-of-value purposes, while the vast majority of global economic activity still runs through the fiat banking system.'}
+  ],
+  quiz:[
+    {q:'Bitcoin\'s maximum supply is capped by protocol at:', opts:['1 million','21 million','100 million','Unlimited, adjusted yearly'], correct:1, explain:'21 million is hard-coded into the Bitcoin protocol as its final issuance cap.'},
+    {q:'A stablecoin is typically designed to:', opts:['Maximize price volatility for trading profit','Maintain a stable peg, often to a fiat currency like the US dollar','Replace gold as a commodity money','Function only within a single company'], correct:1, explain:'Stability, usually via a fiat peg, is the entire point of a stablecoin.'},
+    {q:'The main structural difference between a CBDC and a decentralized cryptocurrency is:', opts:['CBDCs use blockchain and crypto doesn\'t','CBDCs are centrally issued by a central bank; decentralized crypto has no central issuer','CBDCs are always anonymous','There is no real difference'], correct:1, explain:'Centralized issuance by the state is exactly what separates a CBDC from decentralized crypto.'}
+  ]
+}
+];
+
+let state = null;
+let view = { name:'ledger', moduleId:null, reviewQueue:[], reviewIdx:0, reviewFlipped:false, quizIdx:0, quizAnswered:false, quizSelected:null, quizScore:0 };
+
+function allCardIds(){ return MODULES.flatMap(m => m.cards.map(c => m.id+'::'+m.cards.indexOf(c))); }
+function findCard(cardId){
+  const [mid, idx] = cardId.split('::');
+  const m = MODULES.find(x=>x.id===mid);
+  return { module:m, card:m.cards[+idx] };
+}
+
+function defaultState(){
+  const cards = {};
+  allCardIds().forEach(id => { cards[id] = { ease:2.5, interval:0, reps:0, due: Date.now() }; });
+  return { cards, quiz:{}, streak:0, lastActiveDay:null, totalReviews:0 };
+}
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      const def = defaultState();
+      parsed.cards = Object.assign(def.cards, parsed.cards || {});
+      state = parsed;
+    } else {
+      state = defaultState();
+    }
+  }catch(e){
+    state = defaultState();
+  }
+  touchStreak();
+  render();
+}
+
+async function saveState(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }
+  catch(e){ /* best effort */ }
+}
+
+function todayStr(d){ return new Date(d).toISOString().slice(0,10); }
+function touchStreak(){
+  const today = todayStr(Date.now());
+  if(state.lastActiveDay === today) return;
+  const yesterday = todayStr(Date.now() - 86400000);
+  if(state.lastActiveDay === yesterday){ state.streak = (state.streak||0) + 1; }
+  else if(state.lastActiveDay === null){ state.streak = 1; }
+  else { state.streak = 1; }
+  state.lastActiveDay = today;
+  saveState();
+}
+
+function scheduleCard(cardId, rating){
+  const c = state.cards[cardId];
+  if(rating === 'again'){
+    c.reps = 0; c.interval = 0; c.ease = Math.max(1.3, c.ease - 0.2);
+    c.due = Date.now() + 10*60*1000;
+  } else {
+    if(rating === 'hard'){ c.ease = Math.max(1.3, c.ease - 0.15); c.interval = c.reps===0 ? 1 : Math.max(1, Math.round(c.interval*1.2)); }
+    if(rating === 'good'){ c.interval = c.reps===0 ? 1 : Math.round(c.interval*c.ease); }
+    if(rating === 'easy'){ c.ease = c.ease + 0.15; c.interval = c.reps===0 ? 3 : Math.round(c.interval*c.ease*1.3); }
+    c.interval = Math.max(1, c.interval);
+    c.reps += 1;
+    c.due = Date.now() + c.interval*86400000;
+  }
+  state.totalReviews = (state.totalReviews||0) + 1;
+  saveState();
+}
+
+function dueCardIds(){
+  const now = Date.now();
+  return allCardIds().filter(id => state.cards[id].due <= now);
+}
+function masteredCount(){
+  return allCardIds().filter(id => state.cards[id].reps >= 3).length;
+}
+function moduleProgress(m){
+  const ids = m.cards.map((c,i)=> m.id+'::'+i);
+  const started = ids.filter(id => state.cards[id].reps > 0).length;
+  const mastered = ids.filter(id => state.cards[id].reps >= 3).length;
+  return { total: ids.length, started, mastered, due: ids.filter(id=>state.cards[id].due<=Date.now()).length };
+}
+function quizBest(mid){ return state.quiz[mid] || null; }
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function setView(v){ view = Object.assign(view, v); render(); }
+
+function render(){
+  const app = document.getElementById('app');
+  const dueTotal = dueCardIds().length;
+  app.innerHTML = `
+    <div class="masthead">
+      <div>
+        <h1>The Ledger</h1>
+        <div class="sub">A retention system for how money works</div>
+      </div>
+      <div class="streak-tag">${state.streak||0} day streak</div>
+    </div>
+    <nav>
+      <button data-nav="ledger" class="${view.name==='ledger'?'active':''}">Ledger</button>
+      <button data-nav="curriculum" class="${view.name==='curriculum'||view.name==='module'?'active':''}">Curriculum</button>
+      <button data-nav="review" class="${view.name==='review'?'active':''}">Review${dueTotal?` <span class="badge">${dueTotal}</span>`:''}</button>
+    </nav>
+    <div id="view-body"></div>
+    <footer class="note">54 concepts · 9 modules · spaced repetition keeps due cards resurfacing</footer>
+  `;
+  document.querySelectorAll('nav button[data-nav]').forEach(b=>{
+    b.onclick = ()=> setView({ name:b.dataset.nav, moduleId:null });
+  });
+  const body = document.getElementById('view-body');
+  if(view.name==='ledger') renderLedger(body);
+  else if(view.name==='curriculum') renderCurriculum(body);
+  else if(view.name==='module') renderModule(body);
+  else if(view.name==='review') renderReview(body);
+  else if(view.name==='quiz') renderQuiz(body);
+}
+
+function renderLedger(body){
+  const total = allCardIds().length;
+  const mastered = masteredCount();
+  const due = dueCardIds().length;
+  const balance = mastered; // "balance" = concepts credited to mastery
+  const rows = MODULES.map((m,i)=>{
+    const p = moduleProgress(m);
+    const pct = Math.round(p.mastered/p.total*100);
+    const status = p.mastered===p.total ? '<span class="pill credit">mastered</span>'
+                  : p.started>0 ? '<span class="pill neutral">in progress</span>'
+                  : '<span class="pill debit">not started</span>';
+    return `<tr class="row-link" data-open="${m.id}">
+      <td style="font-family:'IBM Plex Mono',monospace;color:var(--text-faint);">0${i+1}</td>
+      <td><strong style="font-family:'Spectral',serif;">${esc(m.title)}</strong></td>
+      <td>${status}</td>
+      <td><span class="progress-mini"><div style="width:${pct}%"></div></span></td>
+      <td class="num">${p.mastered}/${p.total}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="card">
+      <div class="ledger-header">
+        <div>
+          <div class="balance-label">Knowledge balance</div>
+          <div class="balance-value">${balance} / ${total}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="balance-label">Due for review</div>
+          <div class="balance-value" style="color:${due?'var(--debit)':'var(--credit)'};">${due}</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="n">${state.totalReviews||0}</div><div class="l">Total reviews</div></div>
+        <div class="stat-box"><div class="n">${mastered}</div><div class="l">Concepts mastered</div></div>
+        <div class="stat-box"><div class="n">${Object.keys(state.quiz).length}/${MODULES.length}</div><div class="l">Quizzes passed</div></div>
+      </div>
+      ${due>0 ? `<div class="btn-row"><button class="btn primary" id="start-review">Review ${due} due card${due===1?'':'s'} →</button></div>`
+              : `<div class="btn-row"><button class="btn" id="start-review" disabled style="opacity:0.5;cursor:default;">Nothing due right now</button></div>`}
+    </div>
+    <div class="card">
+      <h2>Account statement</h2>
+      <p class="lede">Every module, at a glance. Debits are concepts still owed; credits are concepts you've earned.</p>
+      <table class="ledger-table">
+        <thead><tr><th>#</th><th>Module</th><th>Status</th><th>Progress</th><th class="num">Mastered</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  const startBtn = document.getElementById('start-review');
+  if(startBtn && due>0) startBtn.onclick = ()=> beginReview();
+  body.querySelectorAll('tr[data-open]').forEach(tr=>{
+    tr.onclick = ()=> setView({ name:'module', moduleId: tr.dataset.open });
+  });
+}
+
+function renderCurriculum(body){
+  const rows = MODULES.map((m,i)=>{
+    const p = moduleProgress(m);
+    const best = quizBest(m.id);
+    return `<div class="module-row" data-open="${m.id}">
+      <div class="module-num">0${i+1}</div>
+      <div>
+        <div class="module-title">${esc(m.title)}</div>
+        <div class="module-meta">${esc(m.tagline)}</div>
+      </div>
+      <div class="module-right">
+        ${p.mastered}/${p.total} mastered${best!==null ? `<br>quiz ${best}/${m.quiz.length}` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  body.innerHTML = `<div class="card"><h2>Curriculum</h2><p class="lede">Nine modules, ordered so each builds on the last — from what money is, to the frontier of digital money.</p>${rows}</div>`;
+  body.querySelectorAll('.module-row').forEach(r=>{
+    r.onclick = ()=> setView({ name:'module', moduleId:r.dataset.open });
+  });
+}
+
+function renderModule(body){
+  const m = MODULES.find(x=>x.id===view.moduleId) || MODULES[0];
+  const p = moduleProgress(m);
+  const best = quizBest(m.id);
+  const cardsHtml = m.cards.map((c,i)=>{
+    const cid = m.id+'::'+i;
+    const cs = state.cards[cid];
+    const isDue = cs.due <= Date.now();
+    const statusLabel = cs.reps===0 ? 'new' : (isDue ? 'due for review' : `next review in ${Math.max(1,Math.ceil((cs.due-Date.now())/86400000))}d`);
+    return `<div class="flash-item" data-idx="${i}">
+      <div class="fq">${esc(c.q)}</div>
+      <div class="fa">${esc(c.a)}</div>
+      <div class="status">${statusLabel}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <span class="back-link" id="back-curr">← Curriculum</span>
+    <div class="card">
+      <h2>${esc(m.title)}</h2>
+      <p class="lede">${esc(m.tagline)}</p>
+      <div class="overview-text">${esc(m.overview)}</div>
+      <div class="btn-row">
+        <button class="btn primary" id="study-module">Study this module's ${m.cards.length} cards →</button>
+        <button class="btn brass" id="quiz-module">Take the quiz${best!==null?` (best: ${best}/${m.quiz.length})`:''}</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Flashcards</h2>
+      <p class="lede">Tap a card to flip it. ${p.mastered}/${p.total} mastered so far.</p>
+      <div class="flash-list">${cardsHtml}</div>
+    </div>
+  `;
+  document.getElementById('back-curr').onclick = ()=> setView({ name:'curriculum' });
+  document.getElementById('study-module').onclick = ()=> beginReview(m.id);
+  document.getElementById('quiz-module').onclick = ()=> beginQuiz(m.id);
+  body.querySelectorAll('.flash-item').forEach(el=>{
+    el.onclick = ()=> el.classList.toggle('open');
+  });
+}
+
+function beginReview(moduleId){
+  let queue;
+  if(moduleId){
+    const m = MODULES.find(x=>x.id===moduleId);
+    queue = m.cards.map((c,i)=> m.id+'::'+i);
+  } else {
+    queue = dueCardIds();
+  }
+  if(queue.length===0){ setView({ name:'review' }); return; }
+  setView({ name:'review', reviewQueue:queue, reviewIdx:0, reviewFlipped:false });
+}
+
+function renderReview(body){
+  if(!view.reviewQueue || view.reviewQueue.length===0){
+    const due = dueCardIds();
+    if(due.length>0){
+      body.innerHTML = `<div class="card"><div class="empty-state"><div class="big">${due.length} card${due.length===1?'':'s'} ready</div><p>Start a review session to keep your ledger balanced.</p><button class="btn primary" id="go-review">Begin review →</button></div></div>`;
+      document.getElementById('go-review').onclick = ()=> beginReview();
+    } else {
+      body.innerHTML = `<div class="card"><div class="empty-state"><div class="big">The books are balanced</div><p>Nothing is due right now. Come back later, or study a module you haven't started yet.</p><button class="btn" id="go-curr">Browse curriculum</button></div></div>`;
+      document.getElementById('go-curr').onclick = ()=> setView({ name:'curriculum' });
+    }
+    return;
+  }
+  if(view.reviewIdx >= view.reviewQueue.length){
+    body.innerHTML = `<div class="card"><div class="empty-state"><div class="big">Session complete</div><p>You reviewed ${view.reviewQueue.length} card${view.reviewQueue.length===1?'':'s'}. Nice work.</p><button class="btn primary" id="back-ledger">Back to ledger</button></div></div>`;
+    document.getElementById('back-ledger').onclick = ()=> setView({ name:'ledger', reviewQueue:[] });
+    return;
+  }
+  const cardId = view.reviewQueue[view.reviewIdx];
+  const { module, card } = findCard(cardId);
+  body.innerHTML = `
+    <div class="card">
+      <div class="review-stage">
+        <div class="review-progress">${esc(module.title)} · card ${view.reviewIdx+1} of ${view.reviewQueue.length}</div>
+        <div class="flip-card" id="flip-card">${view.reviewFlipped ? esc(card.a) : esc(card.q)}</div>
+        <div class="flip-hint">${view.reviewFlipped ? '' : 'tap the card to reveal the answer'}</div>
+        ${view.reviewFlipped ? `
+        <div class="rate-row">
+          <button class="rate-btn again" data-rate="again"><span class="k">Again</span><span class="d">10 min</span></button>
+          <button class="rate-btn hard" data-rate="hard"><span class="k">Hard</span><span class="d">short</span></button>
+          <button class="rate-btn good" data-rate="good"><span class="k">Good</span><span class="d">normal</span></button>
+          <button class="rate-btn easy" data-rate="easy"><span class="k">Easy</span><span class="d">longer</span></button>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('flip-card').onclick = ()=>{
+    if(!view.reviewFlipped) setView({ reviewFlipped:true });
+  };
+  body.querySelectorAll('.rate-btn').forEach(b=>{
+    b.onclick = ()=>{
+      scheduleCard(cardId, b.dataset.rate);
+      setView({ reviewIdx: view.reviewIdx+1, reviewFlipped:false });
+    };
+  });
+}
+
+function beginQuiz(moduleId){
+  setView({ name:'quiz', moduleId, quizIdx:0, quizAnswered:false, quizSelected:null, quizScore:0 });
+}
+
+function renderQuiz(body){
+  const m = MODULES.find(x=>x.id===view.moduleId);
+  if(view.quizIdx >= m.quiz.length){
+    const prevBest = quizBest(m.id);
+    if(prevBest===null || view.quizScore > prevBest){ state.quiz[m.id] = view.quizScore; saveState(); }
+    body.innerHTML = `<div class="card"><div class="empty-state">
+      <div class="big">${view.quizScore} / ${m.quiz.length} correct</div>
+      <p>Best score for this module: ${Math.max(view.quizScore, prevBest||0)}/${m.quiz.length}</p>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn primary" id="retake">Retake quiz</button>
+        <button class="btn" id="back-mod">Back to module</button>
+      </div>
+    </div></div>`;
+    document.getElementById('retake').onclick = ()=> beginQuiz(m.id);
+    document.getElementById('back-mod').onclick = ()=> setView({ name:'module', moduleId:m.id });
+    return;
+  }
+  const q = m.quiz[view.quizIdx];
+  const opts = q.opts.map((o,i)=>{
+    let cls = '';
+    if(view.quizAnswered){
+      if(i===q.correct) cls='correct';
+      else if(i===view.quizSelected) cls='wrong';
+    }
+    return `<button class="quiz-opt ${cls}" data-i="${i}" ${view.quizAnswered?'disabled':''}>${esc(o)}</button>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="card">
+      <div class="review-progress">${esc(m.title)} quiz · question ${view.quizIdx+1} of ${m.quiz.length} <span style="float:right;" class="quiz-score">score: ${view.quizScore}</span></div>
+      <div class="quiz-q">${esc(q.q)}</div>
+      <div>${opts}</div>
+      ${view.quizAnswered ? `<div class="quiz-explain">${esc(q.explain)}</div><div class="btn-row"><button class="btn primary" id="next-q">${view.quizIdx+1<m.quiz.length?'Next question →':'See results →'}</button></div>` : ''}
+    </div>
+  `;
+  if(!view.quizAnswered){
+    body.querySelectorAll('.quiz-opt').forEach(b=>{
+      b.onclick = ()=>{
+        const i = +b.dataset.i;
+        const correct = i===q.correct;
+        setView({ quizAnswered:true, quizSelected:i, quizScore: view.quizScore + (correct?1:0) });
+      };
+    });
+  } else {
+    document.getElementById('next-q').onclick = ()=>{
+      setView({ quizIdx: view.quizIdx+1, quizAnswered:false, quizSelected:null });
+    };
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>

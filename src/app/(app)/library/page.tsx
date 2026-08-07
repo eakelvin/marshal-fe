@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listKnowledgeItems } from "@/lib/api";
-import { sourceLabels } from "@/lib/data/mock";
+import { sourceLabels } from "@/lib/data/source-labels";
 import type { KnowledgeItem, KnowledgeSource } from "@/types";
 import { cn } from "@/lib/utils";
 

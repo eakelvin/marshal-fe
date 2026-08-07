@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
-import { knowledgeItems, sourceLabels } from "@/lib/data/mock";
+import { knowledgeItems } from "@/lib/data/mock";
+import { sourceLabels } from "@/lib/data/source-labels";
 import type { KnowledgeSource } from "@/types";
 
 const suggestions = [

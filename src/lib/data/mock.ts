@@ -5,44 +5,7 @@ import type {
   GraphNode,
   KnowledgeItem,
   Notification,
-  UserProfile,
 } from "@/types";
-
-export const currentUser: UserProfile = {
-  name: "Alex Chen",
-  firstName: "Alex",
-  lastName: "Chen",
-  email: "alex@marshal.ai",
-  occupation: "Product Designer",
-  streak: 12,
-  itemsSaved: 247,
-  reviewsCompleted: 89,
-  followers: 1284,
-  following: 312,
-  achievements: [
-    {
-      id: "a1",
-      title: "Curious Mind",
-      description: "Saved 100 knowledge items",
-      earnedAt: "2026-06-12",
-      icon: "brain",
-    },
-    {
-      id: "a2",
-      title: "Week Warrior",
-      description: "7-day learning streak",
-      earnedAt: "2026-07-01",
-      icon: "flame",
-    },
-    {
-      id: "a3",
-      title: "Deep Diver",
-      description: "Completed 50 reviews",
-      earnedAt: "2026-07-18",
-      icon: "target",
-    },
-  ],
-};
 
 export const knowledgeItems: KnowledgeItem[] = [
   {
@@ -463,42 +426,3 @@ export const graphEdges: GraphEdge[] = [
   { id: "e8", source: "n1", target: "n6", strength: 0.4 },
   { id: "e9", source: "n4", target: "n1", strength: 0.35 },
 ];
-
-export const weeklyProgress = [
-  { day: "Mon", items: 4, reviews: 6 },
-  { day: "Tue", items: 2, reviews: 8 },
-  { day: "Wed", items: 5, reviews: 5 },
-  { day: "Thu", items: 3, reviews: 9 },
-  { day: "Fri", items: 6, reviews: 4 },
-  { day: "Sat", items: 1, reviews: 7 },
-  { day: "Sun", items: 3, reviews: 3 },
-];
-
-export const insights = [
-  {
-    id: "i1",
-    title: "You're building depth in AI systems",
-    body: "68% of this week's saves cluster around transformers and retrieval.",
-  },
-  {
-    id: "i2",
-    title: "Review gap detected",
-    body: "4 advanced papers haven't been revisited in 14+ days.",
-  },
-  {
-    id: "i3",
-    title: "Design ? AI crossover",
-    body: "Connecting Calm UI notes to agent streaming patterns could spark a strong product essay.",
-  },
-];
-
-export const sourceLabels: Record<string, string> = {
-  article: "Article",
-  youtube: "YouTube",
-  tweet: "X / Tweet",
-  paper: "Research Paper",
-  github: "GitHub",
-  podcast: "Podcast",
-  blog: "Blog",
-  document: "Document",
-};
