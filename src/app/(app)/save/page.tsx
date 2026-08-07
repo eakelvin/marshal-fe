@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Loader2, Sparkles, Upload } from "lucide-react";
+import { Link2, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ApiError, createKnowledgeItem } from "@/lib/api";
@@ -142,7 +143,7 @@ export default function SavePage() {
           >
             {saving ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
                 Saving
               </>
             ) : (
@@ -162,7 +163,7 @@ export default function SavePage() {
           aria-live="polite"
         >
           <p className="text-sm font-medium flex items-center gap-2">
-            <Loader2 className="size-4 animate-spin text-primary" />
+            <Spinner className="size-4 text-primary" />
             Saving to your library
           </p>
           <p className="mt-2 text-xs text-muted-foreground">

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ApiError, getKnowledgeItem, processKnowledgeItem } from "@/lib/api";
 import type { KnowledgeItem } from "@/types";
 
@@ -53,7 +54,7 @@ export function CollectionStatus({
 }) {
   const router = useRouter();
   const [item, setItem] = useState(initialItem);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setItem(initialItem);
@@ -84,21 +85,23 @@ export function CollectionStatus({
     };
   }, [item.id, item.hasContent, item.processed, item.status, router]);
 
-  const retry = () => {
-    startTransition(async () => {
-      try {
-        const next = await processKnowledgeItem(item.id);
-        setItem(next);
-        router.refresh();
-        toast.success(
-          next.processed ? "Summary ready" : "Processing finished"
-        );
-      } catch (err) {
-        toast.error(
-          err instanceof ApiError ? err.message : "Could not re-process this item"
-        );
-      }
-    });
+  const retry = async () => {
+    if (pending) return;
+    setPending(true);
+    try {
+      const next = await processKnowledgeItem(item.id);
+      setItem(next);
+      router.refresh();
+      toast.success(
+        next.processed ? "Summary ready" : "Processing finished"
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not re-process this item"
+      );
+    } finally {
+      setPending(false);
+    }
   };
 
   if (item.processed || item.status === "ready") return null;
@@ -119,9 +122,7 @@ export function CollectionStatus({
             : "text-[10px] border-warning/40 text-warning"
         }
       >
-        {working && (
-          <Loader2 className="mr-1 size-3 animate-spin" aria-hidden />
-        )}
+        {working && <Spinner className="mr-1 size-3" />}
         {statusLabel(item)}
       </Badge>
       <p className="text-sm text-muted-foreground flex-1 min-w-[12rem]">
@@ -134,10 +135,10 @@ export function CollectionStatus({
           variant="outline"
           className="gap-1.5"
           disabled={pending}
-          onClick={retry}
+          onClick={() => void retry()}
         >
           {pending ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Spinner className="size-3.5" />
           ) : (
             <RefreshCw className="size-3.5" />
           )}

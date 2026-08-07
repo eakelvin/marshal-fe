@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AccountForm } from "@/components/settings/account-form";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -14,11 +14,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { UserProfile } from "@/types";
 
-export function SettingsView({ user }: { user: UserProfile }) {
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [reviewReminders, setReviewReminders] = useState(true);
-  const [aiSuggestions, setAiSuggestions] = useState(true);
+export function SettingsView({ user: initialUser }: { user: UserProfile }) {
+  const [user, setUser] = useState(initialUser);
+  const [emailNotifs, setEmailNotifs] = useState(false);
+  const [reviewReminders, setReviewReminders] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState(false);
   const [publicProfile, setPublicProfile] = useState(false);
+
+  // Pick up server refresh after save
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -41,8 +47,8 @@ export function SettingsView({ user }: { user: UserProfile }) {
           {/* <TabsTrigger value="api">API Keys</TabsTrigger> */}
         </TabsList>
 
-        <TabsContent value="account" className="mt-6 space-y-4">
-          <AccountForm user={user} />
+        <TabsContent value="account" className="mt-6 space-y-4" keepMounted>
+          <AccountForm user={user} onUserUpdated={setUser} />
         </TabsContent>
 
         {/* <TabsContent value="theme" className="mt-6">
