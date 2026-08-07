@@ -24,7 +24,9 @@ export {
   getInsights,
   getWeeklyProgress,
   getFirstName,
+  updateProfile,
 } from "@/lib/api/user";
+export type { UpdateProfileInput } from "@/lib/api/user";
 export { submitSurvey } from "@/lib/api/survey";
 export type { SurveyAnswers, SurveyRecord } from "@/lib/api/survey-schema";
 export { SURVEY_OPTIONS } from "@/lib/api/survey-schema";

@@ -45,7 +45,7 @@ export async function login(input: {
     setAccessToken(data.session.access_token);
     return {
       token: data.session.access_token,
-      user: mapSupabaseUser(data.user, input.email),
+      user: mapSupabaseUser(data.user, null, input.email),
     };
   }
 
@@ -106,7 +106,7 @@ export async function register(input: {
     setAccessToken(data.session.access_token);
     return {
       token: data.session.access_token,
-      user: mapSupabaseUser(data.user!, input.email),
+      user: mapSupabaseUser(data.user!, null, input.email),
     };
   }
 
@@ -182,11 +182,33 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
 }
 
-export async function updatePassword(password: string): Promise<void> {
+export async function updatePassword(
+  password: string,
+  options?: { currentPassword?: string }
+): Promise<void> {
   requireLiveAuth();
 
   if (env.apiProvider === "supabase") {
     const supabase = createClient();
+
+    if (options?.currentPassword) {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user?.email) {
+        throw new ApiError("Not authenticated", 401);
+      }
+
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: options.currentPassword,
+      });
+      if (verifyError) {
+        throw new ApiError("Current password is incorrect", 400);
+      }
+    }
+
     const { error } = await supabase.auth.updateUser({ password });
     if (error) throw new ApiError(error.message, 400);
     return;
@@ -194,7 +216,12 @@ export async function updatePassword(password: string): Promise<void> {
 
   await api("/v1/auth/reset-password", {
     method: "POST",
-    body: { password },
+    body: {
+      password,
+      ...(options?.currentPassword
+        ? { currentPassword: options.currentPassword }
+        : {}),
+    },
   });
 }
 

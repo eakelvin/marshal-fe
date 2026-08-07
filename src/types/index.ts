@@ -100,7 +100,23 @@ export interface UserProfile {
   lastName: string;
   email: string;
   occupation: string;
+  /** Personal site / portfolio hostname or URL */
+  domain?: string;
+  /** LinkedIn profile URL or username */
+  linkedin?: string;
+  /** GitHub profile URL or username */
+  github?: string;
+  /** X / Twitter profile URL or username */
+  twitter?: string;
+  /** ISO date YYYY-MM-DD */
+  birthday?: string;
+  /** Phone number */
+  phone?: string;
+  /** Mailing / home address */
+  address?: string;
   avatar?: string;
+  /** True when the account has an email/password identity (not Google-only). */
+  hasPasswordAuth?: boolean;
   streak: number;
   itemsSaved: number;
   reviewsCompleted: number;

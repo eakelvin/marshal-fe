@@ -20,6 +20,13 @@ import { getCurrentUser } from "@/lib/api/user-server";
 
 export const metadata = { title: "Profile" };
 
+function externalHref(value: string, hostPrefix: string): string {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.includes(".")) return `https://${trimmed}`;
+  return `https://${hostPrefix}${trimmed}`;
+}
+
 export default async function ProfilePage() {
   const [user, collections, items] = await Promise.all([
     getCurrentUser(),
@@ -51,6 +58,50 @@ export default async function ProfilePage() {
             <p className="text-sm text-muted-foreground">
               {[user.occupation, user.email].filter(Boolean).join("  |  ")}
             </p>
+            {(user.domain || user.linkedin || user.github || user.twitter) && (
+              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                {user.domain && (
+                  <a
+                    href={externalHref(user.domain, "")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {user.domain.replace(/^https?:\/\//i, "")}
+                  </a>
+                )}
+                {user.linkedin && (
+                  <a
+                    href={externalHref(user.linkedin, "linkedin.com/in/")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+                {user.github && (
+                  <a
+                    href={externalHref(user.github, "github.com/")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    GitHub
+                  </a>
+                )}
+                {user.twitter && (
+                  <a
+                    href={externalHref(user.twitter, "x.com/")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    X / Twitter
+                  </a>
+                )}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-4 text-sm">
               <span className="inline-flex items-center gap-1.5">
                 <Users className="size-3.5 text-muted-foreground" aria-hidden />
