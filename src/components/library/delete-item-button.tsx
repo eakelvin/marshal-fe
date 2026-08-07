@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ApiError, deleteKnowledgeItem } from "@/lib/api";
 
 export function DeleteItemButton({
@@ -26,29 +27,31 @@ export function DeleteItemButton({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
   function handleOpenChange(next: boolean) {
     if (pending && !next) return;
     setOpen(next);
   }
 
-  function handleDelete() {
-    startTransition(async () => {
-      try {
-        await deleteKnowledgeItem(itemId);
-        toast.success("Item deleted");
-        setOpen(false);
-        router.push("/library");
-        router.refresh();
-      } catch (error) {
-        const message =
-          error instanceof ApiError
-            ? error.message
-            : "Could not delete this item";
-        toast.error(message);
-      }
-    });
+  async function handleDelete() {
+    if (pending) return;
+    setPending(true);
+    try {
+      await deleteKnowledgeItem(itemId);
+      toast.success("Item deleted");
+      setOpen(false);
+      router.push("/library");
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : "Could not delete this item";
+      toast.error(message);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -77,9 +80,17 @@ export function DeleteItemButton({
             <AlertDialogAction
               variant="destructive"
               disabled={pending}
-              onClick={handleDelete}
+              className="gap-2"
+              onClick={() => void handleDelete()}
             >
-              {pending ? "Deleting…" : "Delete"}
+              {pending ? (
+                <>
+                  <Spinner className="size-4" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

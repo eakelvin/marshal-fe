@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, updatePassword, updateProfile } from "@/lib/api";
 import type { UserProfile } from "@/types";
@@ -18,9 +20,10 @@ function ChangePasswordSection({
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [saving, setSaving] = useState(false);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
+    if (saving) return;
     if (hasPasswordAuth && !currentPassword) {
       toast.error("Enter your current password");
       return;
@@ -38,25 +41,28 @@ function ChangePasswordSection({
       return;
     }
 
-    startTransition(async () => {
-      try {
-        await updatePassword(
-          password,
-          hasPasswordAuth ? { currentPassword } : undefined
-        );
-        setCurrentPassword("");
-        setPassword("");
-        setConfirm("");
-        setHasPasswordAuth(true);
-        toast.success(
-          hasPasswordAuth ? "Password updated" : "Password added — you can sign in with email too"
-        );
-      } catch (err) {
-        toast.error(
-          err instanceof ApiError ? err.message : "Could not update password"
-        );
-      }
-    });
+    setSaving(true);
+    try {
+      await updatePassword(
+        password,
+        hasPasswordAuth ? { currentPassword } : undefined
+      );
+      setCurrentPassword("");
+      setPassword("");
+      setConfirm("");
+      setHasPasswordAuth(true);
+      toast.success(
+        hasPasswordAuth
+          ? "Password updated"
+          : "Password added — you can sign in with email too"
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not update password"
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -80,6 +86,7 @@ function ChangePasswordSection({
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             autoComplete="current-password"
+            disabled={saving}
           />
         </div>
       )}
@@ -94,6 +101,7 @@ function ChangePasswordSection({
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
           minLength={8}
+          disabled={saving}
         />
       </div>
       <div className="space-y-2">
@@ -107,70 +115,143 @@ function ChangePasswordSection({
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
           minLength={8}
+          disabled={saving}
         />
       </div>
       <Button
-        onClick={onSubmit}
+        onClick={() => void onSubmit()}
         disabled={
-          pending ||
+          saving ||
           !password ||
           !confirm ||
           (hasPasswordAuth && !currentPassword)
         }
         variant="outline"
+        className="gap-2"
       >
-        {pending
-          ? "Updating…"
-          : hasPasswordAuth
-            ? "Update password"
-            : "Add password"}
+        {saving ? (
+          <>
+            <Spinner className="size-4" />
+            Updating…
+          </>
+        ) : hasPasswordAuth ? (
+          "Update password"
+        ) : (
+          "Add password"
+        )}
       </Button>
     </div>
   );
 }
 
-export function AccountForm({ user }: { user: UserProfile }) {
-  const [name, setName] = useState(user.name);
-  const [occupation, setOccupation] = useState(user.occupation);
-  const [domain, setDomain] = useState(user.domain ?? "");
-  const [linkedin, setLinkedin] = useState(user.linkedin ?? "");
-  const [github, setGithub] = useState(user.github ?? "");
-  const [twitter, setTwitter] = useState(user.twitter ?? "");
-  const [birthday, setBirthday] = useState(user.birthday ?? "");
-  const [phone, setPhone] = useState(user.phone ?? "");
-  const [address, setAddress] = useState(user.address ?? "");
-  const [pending, startTransition] = useTransition();
+type AccountFormProps = {
+  user: UserProfile;
+  onUserUpdated: (user: UserProfile) => void;
+};
 
-  const saveProfile = () => {
-    startTransition(async () => {
-      try {
-        const updated = await updateProfile({
-          name,
-          occupation,
-          domain: domain.trim() || undefined,
-          linkedin: linkedin.trim() || undefined,
-          github: github.trim() || undefined,
-          twitter: twitter.trim() || undefined,
-          birthday: birthday.trim() || undefined,
-          phone: phone.trim() || undefined,
-          address: address.trim() || undefined,
-        });
-        setName(updated.name);
-        setOccupation(updated.occupation);
-        setDomain(updated.domain ?? "");
-        setLinkedin(updated.linkedin ?? "");
-        setGithub(updated.github ?? "");
-        setTwitter(updated.twitter ?? "");
-        setBirthday(updated.birthday ?? "");
-        setPhone(updated.phone ?? "");
-        setAddress(updated.address ?? "");
-        toast.success("Account updated");
-      } catch (err) {
-        toast.error(
-          err instanceof ApiError ? err.message : "Could not update account"
-        );
-      }
-    });
+function fieldsFromUser(user: UserProfile) {
+  return {
+    name: user.name,
+    occupation: user.occupation,
+    domain: user.domain ?? "",
+    linkedin: user.linkedin ?? "",
+    github: user.github ?? "",
+    twitter: user.twitter ?? "",
+    birthday: user.birthday ?? "",
+    phone: user.phone ?? "",
+    address: user.address ?? "",
+  };
+}
+
+export function AccountForm({ user, onUserUpdated }: AccountFormProps) {
+  const router = useRouter();
+  const [fields, setFields] = useState(() => fieldsFromUser(user));
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingSocial, setSavingSocial] = useState(false);
+
+  const setField = <K extends keyof typeof fields>(key: K, value: (typeof fields)[K]) => {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const applyProfileUpdated = (updated: UserProfile) => {
+    setFields((prev) => ({
+      ...prev,
+      name: updated.name,
+      occupation: updated.occupation,
+      birthday: updated.birthday ?? "",
+      phone: updated.phone ?? "",
+      address: updated.address ?? "",
+    }));
+    onUserUpdated(updated);
+    router.refresh();
+  };
+
+  const applySocialUpdated = (updated: UserProfile) => {
+    setFields((prev) => ({
+      ...prev,
+      domain: updated.domain ?? "",
+      linkedin: updated.linkedin ?? "",
+      github: updated.github ?? "",
+      twitter: updated.twitter ?? "",
+    }));
+    onUserUpdated(updated);
+    router.refresh();
+  };
+
+  /** Profile section only — social values taken from last saved user. */
+  const saveProfile = async () => {
+    if (savingProfile || !fields.name.trim()) return;
+
+    setSavingProfile(true);
+    try {
+      const updated = await updateProfile({
+        name: fields.name,
+        occupation: fields.occupation,
+        birthday: fields.birthday.trim() || undefined,
+        phone: fields.phone.trim() || undefined,
+        address: fields.address.trim() || undefined,
+        domain: user.domain,
+        linkedin: user.linkedin,
+        github: user.github,
+        twitter: user.twitter,
+      });
+      applyProfileUpdated(updated);
+      toast.success("Profile saved");
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not save profile"
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  /** Social section only — profile values taken from last saved user. */
+  const saveSocial = async () => {
+    if (savingSocial || !user.name.trim()) return;
+
+    setSavingSocial(true);
+    try {
+      const updated = await updateProfile({
+        name: user.name,
+        occupation: user.occupation,
+        birthday: user.birthday,
+        phone: user.phone,
+        address: user.address,
+        domain: fields.domain.trim() || undefined,
+        linkedin: fields.linkedin.trim() || undefined,
+        github: fields.github.trim() || undefined,
+        twitter: fields.twitter.trim() || undefined,
+      });
+      applySocialUpdated(updated);
+      toast.success("Social links saved");
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not save social links"
+      );
+    } finally {
+      setSavingSocial(false);
+    }
   };
 
   return (
@@ -186,11 +267,12 @@ export function AccountForm({ user }: { user: UserProfile }) {
           <Label htmlFor="name">Display name</Label>
           <Input
             id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={fields.name}
+            onChange={(e) => setField("name", e.target.value)}
             placeholder="Your name"
             autoComplete="name"
             maxLength={80}
+            disabled={savingProfile}
           />
         </div>
         <div className="space-y-2">
@@ -211,11 +293,12 @@ export function AccountForm({ user }: { user: UserProfile }) {
           <Label htmlFor="occupation">Occupation</Label>
           <Input
             id="occupation"
-            value={occupation}
-            onChange={(e) => setOccupation(e.target.value)}
+            value={fields.occupation}
+            onChange={(e) => setField("occupation", e.target.value)}
             placeholder="e.g. Product designer"
             autoComplete="organization-title"
             maxLength={120}
+            disabled={savingProfile}
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -224,9 +307,10 @@ export function AccountForm({ user }: { user: UserProfile }) {
             <Input
               id="birthday"
               type="date"
-              value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
+              value={fields.birthday}
+              onChange={(e) => setField("birthday", e.target.value)}
               autoComplete="bday"
+              disabled={savingProfile}
             />
           </div>
           <div className="space-y-2">
@@ -234,11 +318,12 @@ export function AccountForm({ user }: { user: UserProfile }) {
             <Input
               id="phone"
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={fields.phone}
+              onChange={(e) => setField("phone", e.target.value)}
               placeholder="+1 555 000 0000"
               autoComplete="tel"
               maxLength={40}
+              disabled={savingProfile}
             />
           </div>
         </div>
@@ -246,16 +331,28 @@ export function AccountForm({ user }: { user: UserProfile }) {
           <Label htmlFor="address">Address</Label>
           <Textarea
             id="address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={fields.address}
+            onChange={(e) => setField("address", e.target.value)}
             placeholder="Street, city, country"
             autoComplete="street-address"
             rows={2}
             maxLength={300}
+            disabled={savingProfile}
           />
         </div>
-        <Button onClick={saveProfile} disabled={pending || !name.trim()}>
-          {pending ? "Saving…" : "Save profile"}
+        <Button
+          onClick={() => void saveProfile()}
+          disabled={savingProfile || !fields.name.trim()}
+          className="gap-2"
+        >
+          {savingProfile ? (
+            <>
+              <Spinner className="size-4" />
+              Saving…
+            </>
+          ) : (
+            "Save profile"
+          )}
         </Button>
       </div>
 
@@ -270,11 +367,12 @@ export function AccountForm({ user }: { user: UserProfile }) {
           <Label htmlFor="domain">Website</Label>
           <Input
             id="domain"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
+            value={fields.domain}
+            onChange={(e) => setField("domain", e.target.value)}
             placeholder="yoursite.com"
             autoComplete="url"
             maxLength={200}
+            disabled={savingSocial}
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -282,35 +380,49 @@ export function AccountForm({ user }: { user: UserProfile }) {
             <Label htmlFor="linkedin">LinkedIn</Label>
             <Input
               id="linkedin"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
+              value={fields.linkedin}
+              onChange={(e) => setField("linkedin", e.target.value)}
               placeholder="linkedin.com/in/you"
               maxLength={200}
+              disabled={savingSocial}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="github">GitHub</Label>
             <Input
               id="github"
-              value={github}
-              onChange={(e) => setGithub(e.target.value)}
+              value={fields.github}
+              onChange={(e) => setField("github", e.target.value)}
               placeholder="github.com/you"
               maxLength={200}
+              disabled={savingSocial}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="twitter">X / Twitter</Label>
             <Input
               id="twitter"
-              value={twitter}
-              onChange={(e) => setTwitter(e.target.value)}
+              value={fields.twitter}
+              onChange={(e) => setField("twitter", e.target.value)}
               placeholder="x.com/you"
               maxLength={200}
+              disabled={savingSocial}
             />
           </div>
         </div>
-        <Button onClick={saveProfile} disabled={pending || !name.trim()}>
-          {pending ? "Saving…" : "Save social links"}
+        <Button
+          onClick={() => void saveSocial()}
+          disabled={savingSocial || !user.name.trim()}
+          className="gap-2"
+        >
+          {savingSocial ? (
+            <>
+              <Spinner className="size-4" />
+              Saving…
+            </>
+          ) : (
+            "Save social links"
+          )}
         </Button>
       </div>
 
