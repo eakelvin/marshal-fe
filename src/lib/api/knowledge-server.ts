@@ -60,6 +60,26 @@ export async function getKnowledgeItemServer(
   return data ? mapKnowledgeRow(data as KnowledgeItemRow) : null;
 }
 
+export async function deleteKnowledgeItemServer(id: string): Promise<void> {
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("knowledge_items")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[knowledge-server] delete", error);
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("Item not found");
+  }
+}
+
 export async function createKnowledgeItemServer(
   input: CreateKnowledgeInput
 ): Promise<KnowledgeItem> {

@@ -15,6 +15,7 @@ import { SourceBadge } from "@/components/shared/source-badge";
 import { KnowledgeCard } from "@/components/shared/knowledge-card";
 import { getKnowledgeItemServer, listKnowledgeItemsServer } from "@/lib/api/knowledge-server";
 import { CollectionStatus } from "@/components/library/collection-status";
+import { DeleteItemButton } from "@/components/library/delete-item-button";
 
 export default async function KnowledgeDetailPage({
   params,
@@ -71,19 +72,22 @@ export default async function KnowledgeDetailPage({
             Your note: {item.notes}
           </p>
         )}
-        {item.url !== "#" && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            render={
-              <a href={item.url} target="_blank" rel="noreferrer" />
-            }
-          >
-            Open original
-            <ExternalLink className="size-3.5" />
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {item.url !== "#" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              render={
+                <a href={item.url} target="_blank" rel="noreferrer" />
+              }
+            >
+              Open original
+              <ExternalLink className="size-3.5" />
+            </Button>
+          )}
+          <DeleteItemButton itemId={item.id} itemTitle={item.title} />
+        </div>
       </header>
 
       {!item.processed && <CollectionStatus initialItem={item} />}
